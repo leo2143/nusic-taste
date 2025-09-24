@@ -1,0 +1,674 @@
+# Cursor Rules - Vue 3 + Supabase Development Standards
+# Reglas de código para desarrollo con Vue 3, TypeScript, Tailwind CSS y Supabase
+
+## 🎯 ESTRUCTURA DE DIRECTORIOS Y ARCHIVOS
+
+### Organización de directorios:
+- Usar estructura clara y lógica: `/src/components`, `/src/views`, `/src/lib`, `/src/composables`
+- Nombres de archivos en inglés y kebab-case: `user-profile.vue`, `product-catalog.vue`
+- Separar claramente componentes, vistas, composables y utilidades
+- Mantener archivos de configuración en directorio raíz
+- Organizar assets por tipo: `/src/assets/css`, `/src/assets/js`, `/src/assets/images`
+
+### Nomenclatura de archivos:
+- Vue Components: `UserProfile.vue`, `ProductCard.vue`, `NavigationMenu.vue`
+- TypeScript: `userService.ts`, `productManager.ts`, `databaseClient.ts`
+- CSS: `main.css`, `components.css`, `utilities.css`
+- Composables: `useAuth.ts`, `useProducts.ts`, `useSupabase.ts`
+
+## 🎯 VUE 3 COMPOSITION API ESTRICTO
+
+### Regla CRÍTICA - Options API exclusivamente:
+- ✅ **SIEMPRE** usar Options API pattern en todos los componentes Vue
+- ❌ **NUNCA** usar Composition API con `<script setup>`
+- ❌ **NUNCA** usar `ref()`, `reactive()`, `computed()` directamente
+
+### Estructura de componente obligatoria:
+```vue
+<template>
+  <div class="component-container">
+    <h1>{{ title }}</h1>
+    <button @click="handleClick">{{ buttonText }}</button>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'ComponentName',
+  props: {
+    title: {
+      type: String,
+      required: true,
+      default: 'Default Title'
+    }
+  },
+  data() {
+    return {
+      buttonText: 'Click me',
+      isLoading: false
+    }
+  },
+  computed: {
+    displayText() {
+      return this.isLoading ? 'Loading...' : this.buttonText
+    }
+  },
+  methods: {
+    async handleClick() {
+      this.isLoading = true
+      try {
+        // Lógica del método
+      } finally {
+        this.isLoading = false
+      }
+    }
+  },
+  async mounted() {
+    // Lógica de inicialización
+  }
+}
+</script>
+
+<style scoped>
+.component-container {
+  /* Estilos del componente */
+}
+</style>
+```
+
+### Props y validación:
+```javascript
+props: {
+  // String requerido
+  title: {
+    type: String,
+    required: true
+  },
+  // Number con valor por defecto
+  count: {
+    type: Number,
+    default: 0
+  },
+  // Array con validación personalizada
+  items: {
+    type: Array,
+    default: () => [],
+    validator: (value) => Array.isArray(value)
+  },
+  // Object con estructura específica
+  user: {
+    type: Object,
+    required: true,
+    validator: (value) => {
+      return value && typeof value.id === 'number' && typeof value.name === 'string'
+    }
+  }
+}
+```
+
+## 🎨 TAILWIND CSS Y DISEÑO
+
+### Convenciones de clases:
+- Usar clases de Tailwind CSS para todos los estilos
+- Nombres descriptivos para clases personalizadas: `.product-card`, `.user-profile`
+- Estados: `.is-active`, `.is-loading`, `.is-disabled`
+- Responsive: `.mobile-only`, `.tablet-up`, `.desktop-only`
+
+### Ejemplos de componentes con Tailwind:
+```vue
+<template>
+  <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+    <div class="p-6">
+      <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ product.name }}</h3>
+      <p class="text-gray-600 mb-4">{{ product.description }}</p>
+      <button 
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+        :class="{ 'opacity-50 cursor-not-allowed': isLoading }"
+        @click="handlePurchase"
+        :disabled="isLoading"
+      >
+        {{ isLoading ? 'Processing...' : 'Buy Now' }}
+      </button>
+    </div>
+  </div>
+</template>
+```
+
+### Responsive Design:
+```vue
+<template>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div 
+      v-for="item in items" 
+      :key="item.id"
+      class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+    >
+      <!-- Contenido del item -->
+    </div>
+  </div>
+</template>
+```
+
+## 🗄️ SUPABASE INTEGRATION
+
+### Cliente de Supabase:
+```javascript
+// src/lib/supabaseClient.js
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+
+export const supabase = createClient(supabaseUrl, supabasePublishableKey)
+```
+
+### Uso en componentes Vue:
+```javascript
+// En el componente Vue
+import { supabase } from '@/lib/supabaseClient'
+
+export default {
+  name: 'ProductList',
+  data() {
+    return {
+      products: [],
+      isLoading: false,
+      error: null
+    }
+  },
+  methods: {
+    async fetchProducts() {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('active', true)
+          .order('created_at', { ascending: false })
+        
+        if (error) throw error
+        
+        this.products = data || []
+      } catch (err) {
+        this.error = err.message
+        console.error('Error fetching products:', err)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    async createProduct(productData) {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .insert([productData])
+          .select()
+        
+        if (error) throw error
+        
+        this.products.unshift(data[0])
+        return data[0]
+      } catch (err) {
+        this.error = err.message
+        throw err
+      }
+    }
+  },
+  async mounted() {
+    await this.fetchProducts()
+  }
+}
+```
+
+### Manejo de autenticación:
+```javascript
+// src/composables/useAuth.js (si se usa composables)
+export function useAuth() {
+  const user = ref(null)
+  const loading = ref(true)
+  
+  const signIn = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+    if (error) throw error
+    return data
+  }
+  
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+  }
+  
+  return {
+    user: readonly(user),
+    loading: readonly(loading),
+    signIn,
+    signOut
+  }
+}
+```
+
+## 📝 FORMULARIOS Y VALIDACIÓN
+
+### Estructura de formularios Vue:
+```vue
+<template>
+  <form @submit.prevent="handleSubmit" class="space-y-6">
+    <div class="form-group">
+      <label for="name" class="block text-sm font-medium text-gray-700">
+        Nombre completo
+      </label>
+      <input
+        id="name"
+        v-model="form.name"
+        type="text"
+        required
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        :class="{ 'border-red-500': errors.name }"
+      />
+      <p v-if="errors.name" class="mt-1 text-sm text-red-600">{{ errors.name }}</p>
+    </div>
+    
+    <div class="form-group">
+      <label for="email" class="block text-sm font-medium text-gray-700">
+        Correo electrónico
+      </label>
+      <input
+        id="email"
+        v-model="form.email"
+        type="email"
+        required
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        :class="{ 'border-red-500': errors.email }"
+      />
+      <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
+    </div>
+    
+    <button
+      type="submit"
+      class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      :disabled="isSubmitting"
+    >
+      {{ isSubmitting ? 'Enviando...' : 'Enviar' }}
+    </button>
+  </form>
+</template>
+
+<script>
+export default {
+  name: 'ContactForm',
+  data() {
+    return {
+      form: {
+        name: '',
+        email: '',
+        message: ''
+      },
+      errors: {},
+      isSubmitting: false
+    }
+  },
+  methods: {
+    validateForm() {
+      this.errors = {}
+      
+      if (!this.form.name.trim()) {
+        this.errors.name = 'El nombre es requerido'
+      }
+      
+      if (!this.form.email.trim()) {
+        this.errors.email = 'El email es requerido'
+      } else if (!this.isValidEmail(this.form.email)) {
+        this.errors.email = 'Ingrese un email válido'
+      }
+      
+      return Object.keys(this.errors).length === 0
+    },
+    
+    isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailRegex.test(email)
+    },
+    
+    async handleSubmit() {
+      if (!this.validateForm()) return
+      
+      this.isSubmitting = true
+      
+      try {
+        const { data, error } = await supabase
+          .from('contacts')
+          .insert([this.form])
+          .select()
+        
+        if (error) throw error
+        
+        // Reset form
+        this.form = { name: '', email: '', message: '' }
+        this.$emit('success', data[0])
+        
+      } catch (err) {
+        this.errors.submit = err.message
+      } finally {
+        this.isSubmitting = false
+      }
+    }
+  }
+}
+</script>
+```
+
+## 🎬 ANIMACIONES Y TRANSICIONES
+
+### Regla CRÍTICA - NO COMBINAR CSS + GSAP:
+- ❌ **NUNCA** combinar `transition-*` en CSS con `gsap.to()` en JavaScript
+- ❌ **NUNCA** combinar `animation` en CSS con `gsap.timeline()` en JavaScript
+- ❌ **NUNCA** usar `transform` en CSS y `transform` en GSAP simultáneamente
+
+### CSS Transitions (Para animaciones simples):
+```vue
+<template>
+  <div class="animated-card" :class="{ 'is-active': isActive }">
+    <h3>{{ title }}</h3>
+    <button @click="toggleActive">Toggle</button>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'AnimatedCard',
+  data() {
+    return {
+      isActive: false
+    }
+  },
+  methods: {
+    toggleActive() {
+      this.isActive = !this.isActive
+    }
+  }
+}
+</script>
+
+<style scoped>
+.animated-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.animated-card.is-active {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+</style>
+```
+
+### GSAP Animations (Para animaciones complejas):
+```vue
+<template>
+  <div ref="cardElement" class="gsap-card">
+    <h3>{{ title }}</h3>
+    <button @click="animateCard">Animate</button>
+  </div>
+</template>
+
+<script>
+import { gsap } from 'gsap'
+
+export default {
+  name: 'GsapCard',
+  data() {
+    return {
+      isAnimating: false
+    }
+  },
+  methods: {
+    animateCard() {
+      if (this.isAnimating) return
+      
+      this.isAnimating = true
+      
+      gsap.to(this.$refs.cardElement, {
+        scale: 1.2,
+        rotation: 5,
+        duration: 0.5,
+        ease: 'power2.out',
+        onComplete: () => {
+          gsap.to(this.$refs.cardElement, {
+            scale: 1,
+            rotation: 0,
+            duration: 0.3,
+            ease: 'power2.out',
+            onComplete: () => {
+              this.isAnimating = false
+            }
+          })
+        }
+      })
+    }
+  },
+  mounted() {
+    // Animación inicial
+    gsap.from(this.$refs.cardElement, {
+      opacity: 0,
+      y: 50,
+      duration: 1,
+      ease: 'power2.out'
+    })
+  }
+}
+</script>
+
+<style scoped>
+.gsap-card {
+  /* NO usar transition, transform, animation aquí */
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+</style>
+```
+
+## 🔍 TYPESCRIPT INTEGRATION
+
+### Configuración de tipos:
+```typescript
+// src/types/index.ts
+export interface User {
+  id: number
+  email: string
+  name: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Product {
+  id: number
+  name: string
+  description: string
+  price: number
+  category_id: number
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ApiResponse<T> {
+  data: T | null
+  error: string | null
+  loading: boolean
+}
+```
+
+### Uso en componentes:
+```vue
+<script lang="ts">
+import { defineComponent } from 'vue'
+import type { User, Product } from '@/types'
+
+export default defineComponent({
+  name: 'UserProfile',
+  props: {
+    user: {
+      type: Object as () => User,
+      required: true
+    }
+  },
+  data() {
+    return {
+      products: [] as Product[],
+      loading: false
+    }
+  },
+  methods: {
+    async fetchUserProducts(userId: number): Promise<Product[]> {
+      this.loading = true
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('user_id', userId)
+        
+        if (error) throw error
+        return data || []
+      } finally {
+        this.loading = false
+      }
+    }
+  }
+})
+</script>
+```
+
+## 📱 RESPONSIVE DESIGN
+
+### Mobile-first approach:
+```vue
+<template>
+  <div class="container mx-auto px-4">
+    <!-- Mobile: 1 columna, Desktop: 3 columnas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div 
+        v-for="item in items" 
+        :key="item.id"
+        class="bg-white rounded-lg shadow-md p-4 md:p-6"
+      >
+        <h3 class="text-lg md:text-xl font-semibold mb-2">{{ item.title }}</h3>
+        <p class="text-sm md:text-base text-gray-600">{{ item.description }}</p>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+## 🔍 ACCESIBILIDAD
+
+### Requisitos de accesibilidad:
+- Contraste de colores mínimo 4.5:1
+- Navegación por teclado
+- Textos alternativos en imágenes
+- Estructura de encabezados correcta
+- Etiquetas en formularios
+- ARIA labels cuando sea necesario
+
+### Ejemplo accesible:
+```vue
+<template>
+  <section aria-labelledby="products-heading">
+    <h2 id="products-heading" class="sr-only">Lista de productos</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" role="list">
+      <article 
+        v-for="product in products" 
+        :key="product.id"
+        class="bg-white rounded-lg shadow-md p-6"
+        role="listitem"
+        :aria-labelledby="`product-${product.id}-title`"
+      >
+        <h3 
+          :id="`product-${product.id}-title`"
+          class="text-xl font-semibold text-gray-800 mb-2"
+        >
+          {{ product.name }}
+        </h3>
+        
+        <img 
+          :src="product.image" 
+          :alt="`Imagen de ${product.name}`"
+          class="w-full h-48 object-cover rounded-md mb-4"
+          loading="lazy"
+        />
+        
+        <p class="text-gray-600 mb-4">{{ product.description }}</p>
+        
+        <button 
+          class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+          :aria-describedby="`product-${product.id}-price`"
+          @click="addToCart(product)"
+        >
+          Agregar al carrito
+        </button>
+        
+        <p 
+          :id="`product-${product.id}-price`"
+          class="text-lg font-bold text-green-600 mt-2"
+        >
+          ${{ product.price }}
+        </p>
+      </article>
+    </div>
+  </section>
+</template>
+```
+
+## ✅ VERIFICACIONES OBLIGATORIAS
+
+### Antes de entregar código:
+1. ✅ Vue 3 Options API usado correctamente
+2. ✅ TypeScript sin errores
+3. ✅ Tailwind CSS aplicado consistentemente
+4. ✅ Supabase integrado correctamente
+5. ✅ Formularios validados y funcionando
+6. ✅ Navegación completamente funcional
+7. ✅ Responsive design en todos los dispositivos
+8. ✅ Accesibilidad básica implementada
+9. ✅ Animaciones funcionando correctamente
+10. ✅ Variables de entorno configuradas
+
+## 🚀 COMANDOS DE VERIFICACIÓN
+
+```bash
+# Verificar TypeScript
+npm run type-check
+
+# Verificar linting
+npm run lint
+
+# Formatear código
+npm run format
+
+# Verificar build
+npm run build
+
+# Ejecutar en desarrollo
+npm run dev
+```
+
+## 🎯 VARIABLES DE ENTORNO
+
+### Configuración requerida:
+```env
+# Supabase
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+
+# App Configuration
+VITE_APP_NAME=Music Taste
+VITE_APP_VERSION=1.0.0
+```
+
+Estas reglas deben aplicarse en TODOS los archivos del proyecto para mantener consistencia y calidad del código en Vue 3 + Supabase.
