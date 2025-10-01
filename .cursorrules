@@ -23,6 +23,148 @@
 - ❌ **NUNCA** usar Composition API con `<script setup>`
 - ❌ **NUNCA** usar `ref()`, `reactive()`, `computed()` directamente
 
+## 🎯 REGLAS PARA EL USO CORRECTO DE defineComponent EN VUE 3
+
+### 1. 📦 Importación obligatoria
+```typescript
+import { defineComponent } from 'vue'
+```
+- Siempre debe estar presente si se usa la API de composición sin `<script setup>`
+- **OBLIGATORIO** en todos los componentes Vue con TypeScript
+
+### 2. 🧠 Declaración clara de props
+```typescript
+import type { PropType } from 'vue'
+
+export default defineComponent({
+  props: {
+    // String simple
+    title: {
+      type: String,
+      required: true
+    },
+    // Object complejo con PropType
+    config: {
+      type: Object as PropType<ConfigType>,
+      required: true
+    },
+    // Array tipado
+    items: {
+      type: Array as PropType<User[]>,
+      default: () => []
+    }
+  }
+})
+```
+- **NUNCA** usar `any` como tipo
+- **SIEMPRE** tipar correctamente con PropType para objetos complejos
+
+### 3. 🗣️ Tipado de emits
+```typescript
+export default defineComponent({
+  // Declaración simple
+  emits: ['submit', 'cancel'],
+  
+  // O con TypeScript tipado
+  emits: {
+    submit: (data: FormData) => true,
+    cancel: () => true,
+    update: (value: string) => typeof value === 'string'
+  }
+})
+```
+- **OBLIGATORIO** declarar todos los eventos emitidos
+- Con TypeScript, tipar los parámetros del evento
+
+### 4. 🧩 Uso correcto de setup() (si se usa)
+```typescript
+export default defineComponent({
+  setup(props, { emit, slots, attrs }) {
+    const handleClick = () => {
+      emit('submit', props.data)
+    }
+    
+    // Retornar solo lo necesario para el template
+    return { 
+      handleClick 
+    }
+  }
+})
+```
+- Primer parámetro: `props`
+- Segundo parámetro: `{ emit, slots, attrs }` si se usan
+- Retornar solo lo necesario para el template
+
+### 5. 📐 Organización del componente
+```typescript
+export default defineComponent({
+  name: 'MyComponent',           // ✅ Nombre descriptivo
+  props: { /* ... */ },          // ✅ Props primero
+  emits: [/* ... */],            // ✅ Emits segundo
+  data() { /* ... */ },          // ✅ Data tercero
+  computed: { /* ... */ },       // ✅ Computed cuarto
+  methods: { /* ... */ },        // ✅ Methods quinto
+  watch: { /* ... */ },          // ✅ Watch sexto
+  mounted() { /* ... */ }        // ✅ Lifecycle hooks último
+})
+```
+
+### 6. 🧪 Validación con ESLint y TypeScript
+**Reglas ESLint recomendadas:**
+- `vue/require-prop-types` - Requerir tipos en props
+- `vue/require-explicit-emits` - Requerir declaración explícita de emits
+- `vue/component-definition-name-casing` - Nomenclatura consistente
+- `@typescript-eslint/explicit-function-return-type` - Tipos de retorno explícitos
+
+### 7. 📚 Documentación interna
+```typescript
+export default defineComponent({
+  name: 'UserProfile',
+  
+  /**
+   * Props del componente
+   * @description Configuración del perfil de usuario
+   */
+  props: {
+    user: {
+      type: Object as PropType<User>,
+      required: true,
+      validator: (value: User) => {
+        return value && typeof value.id === 'number'
+      }
+    }
+  },
+  
+  /**
+   * Eventos emitidos por el componente
+   */
+  emits: {
+    update: (user: User) => true,
+    delete: (userId: number) => true
+  },
+  
+  methods: {
+    /**
+     * Actualiza la información del usuario
+     * @param newData - Nuevos datos del usuario
+     */
+    updateUser(newData: Partial<User>) {
+      // Lógica de actualización
+      this.$emit('update', { ...this.user, ...newData })
+    }
+  }
+})
+```
+
+### 8. ✅ VERIFICACIONES OBLIGATORIAS PARA defineComponent
+- ✅ Import de `defineComponent` presente
+- ✅ Props tipados correctamente (sin `any`)
+- ✅ Emits declarados y tipados
+- ✅ Estructura del componente organizada
+- ✅ Documentación en componentes complejos
+- ✅ Validadores en props cuando sea necesario
+- ✅ TypeScript sin errores
+
 ### Estructura de componente obligatoria:
 ```vue
 <template>
