@@ -3,22 +3,16 @@
  * Representa un usuario en el sistema
  */
 export interface User {
-  /** ID único del usuario (clave primaria) */
   id: number
-  /** Nombre del usuario */
+
   name: string
-  /** Apellido del usuario */
   last_name: string
-  /** Correo electrónico del usuario */
   email: string
-  /** Nombre de usuario/nickname */
   nick_name: string
-  /** Edad del usuario */
   age: number
-  /** Género del usuario */
   gender: string
-  /** ID único UUID del usuario (para autenticación) */
   user_id: string
+  profile_image: string
 }
 
 /**
@@ -33,6 +27,7 @@ export interface CreateUser {
   age: number
   gender: string
   user_id: string
+  profile_image: string
 }
 
 /**
@@ -48,7 +43,8 @@ export interface UpdateUser {
   age?: number
   gender?: string
   user_id?: string
-}
+  profile_image?: string
+  }
 
 /**
  * Interface para la respuesta de la API de usuarios
