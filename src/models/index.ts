@@ -34,6 +34,30 @@ export type {
   CommentWithDetails
 } from './Comment'
 
+// Interfaces de Likes de Posts
+export type {
+  LikePost,
+  CreateLikePost,
+  UpdateLikePost,
+  LikePostResponse,
+  LikePostsResponse,
+  LikePostWithUser,
+  LikePostWithPost,
+  LikePostWithDetails
+} from './LikePost'
+
+// Interfaces de Likes de Comentarios
+export type {
+  LikeComment,
+  CreateLikeComment,
+  UpdateLikeComment,
+  LikeCommentResponse,
+  LikeCommentsResponse,
+  LikeCommentWithUser,
+  LikeCommentWithComment,
+  LikeCommentWithDetails
+} from './LikeComment'
+
 /**
  * Tipos de utilidad para operaciones comunes
  */
@@ -88,7 +112,23 @@ export interface PostFilters {
 // Filtros para comentarios
 export interface CommentFilters {
   post_id?: number
-  user_id?: number
+  user_id?: string
+  created_after?: string
+  created_before?: string
+}
+
+// Filtros para likes de posts
+export interface LikePostFilters {
+  user_id?: string
+  post_id?: number
+  created_after?: string
+  created_before?: string
+}
+
+// Filtros para likes de comentarios
+export interface LikeCommentFilters {
+  user_id?: string
+  comment_id?: number
   created_after?: string
   created_before?: string
 }

@@ -13,6 +13,8 @@ export interface Post {
   img_path: string
   /** Número de likes del post */
   likes: number
+  /** ID del usuario que creó el post (clave foránea) */
+  user_id: string
 }
 
 /**
@@ -23,6 +25,7 @@ export interface CreatePost {
   description: string
   img_path: string
   likes?: number
+  user_id: string
 }
 
 /**
@@ -34,6 +37,7 @@ export interface UpdatePost {
   description?: string
   img_path?: string
   likes?: number
+  user_id?: string
 }
 
 /**

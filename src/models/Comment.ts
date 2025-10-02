@@ -7,13 +7,14 @@ export interface Comment {
   id: number
   /** Fecha de creación del comentario */
   created_at: string
-
+  /** Contenido del comentario */
   comment: string
-
   /** ID del post al que pertenece el comentario (clave foránea) */
   post_id: number
   /** ID del usuario que hizo el comentario (clave foránea) */
-  user_id: number
+  user_id: string
+  /** Número de likes del comentario */
+  likes: number
 }
 
 /**
@@ -23,7 +24,8 @@ export interface Comment {
 export interface CreateComment {
   post_id: number
   comment: string
-  user_id: number
+  user_id: string
+  likes?: number
 }
 
 /**
@@ -32,9 +34,10 @@ export interface CreateComment {
  */
 export interface UpdateComment {
   id: number
-  comment: string
+  comment?: string
   post_id?: number
-  user_id?: number
+  user_id?: string
+  likes?: number
 }
 
 /**
