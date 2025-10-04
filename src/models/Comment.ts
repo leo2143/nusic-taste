@@ -13,8 +13,6 @@ export interface Comment {
   post_id: number
   /** ID del usuario que hizo el comentario (clave foránea) */
   user_id: string
-  /** Número de likes del comentario */
-  likes: number
 }
 
 /**
@@ -22,10 +20,9 @@ export interface Comment {
  * Excluye campos que se generan automáticamente
  */
 export interface CreateComment {
-  post_id: number
   comment: string
+  post_id: number
   user_id: string
-  likes?: number
 }
 
 /**
@@ -37,7 +34,6 @@ export interface UpdateComment {
   comment?: string
   post_id?: number
   user_id?: string
-  likes?: number
 }
 
 /**
@@ -65,9 +61,9 @@ export interface CommentsResponse {
 export interface CommentWithUser extends Comment {
   user?: {
     id: number
-    name: string
-    last_name: string
+    complete_name: string
     nick_name: string
+    profile_image: string
   }
 }
 
@@ -80,6 +76,8 @@ export interface CommentWithPost extends Comment {
     id: number
     description: string
     img_path: string
+    likes: number
+    user_id: string
   }
 }
 
@@ -90,13 +88,15 @@ export interface CommentWithPost extends Comment {
 export interface CommentWithDetails extends Comment {
   user?: {
     id: number
-    name: string
-    last_name: string
+    complete_name: string
     nick_name: string
+    profile_image: string
   }
   post?: {
     id: number
     description: string
     img_path: string
+    likes: number
+    user_id: string
   }
 }

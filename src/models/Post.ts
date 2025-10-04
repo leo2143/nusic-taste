@@ -1,3 +1,5 @@
+import type { User } from "."
+
 /**
  * Interface para la tabla posts
  * Representa una publicación en el sistema
@@ -53,7 +55,7 @@ export interface PostResponse {
  * Interface para la respuesta de la API de lista de posts
  */
 export interface PostsResponse {
-  data: Post[] | null
+  data: PostWithUser[] | null
   error: string | null
   loading: boolean
 }
@@ -63,10 +65,5 @@ export interface PostsResponse {
  * Útil para mostrar posts con datos del autor
  */
 export interface PostWithUser extends Post {
-  user?: {
-    id: number
-    name: string
-    last_name: string
-    nick_name: string
-  }
+  user: User
 }

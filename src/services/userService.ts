@@ -1,128 +1,40 @@
 /**
- * Servicio para manejar operaciones CRUD de usuarios
- * Utiliza Supabase para las operaciones de base de datos
+ * Servicio para manejo de usuarios
+ * Proporciona métodos para operaciones CRUD de usuarios
  */
 import supabase from '@/lib/supabaseClient.js'
-import type {  User,  CreateUser,  UpdateUser,  UserResponse,  UsersResponse, UserFilters } from '@/models'
+import type { User, CreateUser, UpdateUser, UserResponse, UsersResponse } from '@/models'
 
 export class UserService {
+
   /**
-   * Obtener todos los usuarios
+   * Obtener todos los usuarios (para administración)
+   * @returns Promise<UsersResponse>
    */
-  static async getAllUsers(filters?: UserFilters): Promise<UsersResponse> {
+  static async getAllUsers(): Promise<UsersResponse> {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false })
 
-      // Aplicar filtros si existen
-      if (filters) {
-        if (filters.name) {
-          query = query.ilike('name', `%${filters.name}%`)
-        }
-        if (filters.email) {
-          query = query.ilike('email', `%${filters.email}%`)
-        }
-        if (filters.nick_name) {
-          query = query.ilike('nick_name', `%${filters.nick_name}%`)
-        }
-        if (filters.gender) {
-          query = query.eq('gender', filters.gender)
-        }
-        if (filters.age_min) {
-          query = query.gte('age', filters.age_min)
-        }
-        if (filters.age_max) {
-          query = query.lte('age', filters.age_max)
-        }
-      }
-
-      const { data, error } = await query
-
       if (error) {
         return {
-          data: null,
+          data: [],
           error: error.message,
           loading: false
         }
       }
 
       return {
-        data: data as User[],
+        data: data || [],
         error: null,
         loading: false
       }
-    } catch (error) {
+    } catch (err) {
       return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        loading: false
-      }
-    }
-  }
-
-  /**
-   * Obtener un usuario por ID
-   */
-  static async getUserById(id: number): Promise<UserResponse> {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data as User,
-        error: null,
-        loading: false
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        loading: false
-      }
-    }
-  }
-
-  /**
-   * Obtener un usuario por user_id (UUID)
-   */
-  static async getUserByUserId(userId: string): Promise<UserResponse> {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data as User,
-        error: null,
-        loading: false
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
+        data: [],
+        error: err instanceof Error ? err.message : 'Error desconocido al obtener usuarios',
         loading: false
       }
     }
@@ -130,6 +42,8 @@ export class UserService {
 
   /**
    * Crear un nuevo usuario
+   * @param userData - Datos del usuario a crear
+   * @returns Promise<UserResponse>
    */
   static async createUser(userData: CreateUser): Promise<UserResponse> {
     try {
@@ -148,14 +62,171 @@ export class UserService {
       }
 
       return {
-        data: data as User,
+        data: data,
         error: null,
         loading: false
       }
-    } catch (error) {
+    } catch (err) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
+        error: err instanceof Error ? err.message : 'Error desconocido al crear usuario',
+        loading: false
+      }
+    }
+  }
+
+  /**
+   * Eliminar un usuario por ID
+   * @param userId - ID del usuario a eliminar
+   * @returns Promise<UserResponse>
+   */
+  static async deleteUser(userId: string): Promise<UserResponse> {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId)
+
+      if (error) {
+        return {
+          data: null,
+          error: error.message,
+          loading: false
+        }
+      }
+
+      return {
+        data: null,
+        error: null,
+        loading: false
+      }
+    } catch (err) {
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Error desconocido al eliminar usuario',
+        loading: false
+      }
+    }
+  }
+
+  /**
+   * Obtener un usuario por nick_name
+   * @param nick_name - Nick name del usuario
+   * @returns Promise<UserResponse>
+   */
+  static async getUserByNickName(nick_name: string): Promise<UserResponse> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('nick_name', nick_name)
+        .maybeSingle()
+
+      if (error) {
+        return {
+          data: null,
+          error: error.message,
+          loading: false
+        }
+      }
+
+      // Si no se encuentra el usuario, devolver null sin error
+      if (!data) {
+        return {
+          data: null,
+          error: null,
+          loading: false
+        }
+      }
+
+      return {
+        data: data,
+        error: null,
+        loading: false
+      }
+    } catch (err) {
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Error desconocido al obtener usuario',
+        loading: false
+      }
+    }
+  }
+
+  /**
+   * Obtener un usuario por email
+   * @param email - Email del usuario
+   * @returns Promise<UserResponse>
+   */
+  static async getUserByEmail(email: string): Promise<UserResponse> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle()
+
+      if (error) {
+        return {
+          data: null,
+          error: error.message,
+          loading: false
+        }
+      }
+
+      // Si no se encuentra el usuario, devolver null sin error
+      if (!data) {
+        return {
+          data: null,
+          error: null,
+          loading: false
+        }
+      }
+
+      return {
+        data: data,
+        error: null,
+        loading: false
+      }
+    } catch (err) {
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Error desconocido al obtener usuario',
+        loading: false
+      }
+    }
+  }
+
+  /**
+   * Crear un nuevo usuario
+   * @param userData - Datos del usuario a crear
+   * @returns Promise<UserResponse>
+   */
+  static async createUser(userData: CreateUser): Promise<UserResponse> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([userData])
+        .select()
+        .single()
+
+      if (error) {
+        return {
+          data: null,
+          error: error.message,
+          loading: false
+        }
+      }
+
+      return {
+        data: data,
+        error: null,
+        loading: false
+      }
+    } catch (err) {
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Error desconocido al crear usuario',
         loading: false
       }
     }
@@ -163,6 +234,9 @@ export class UserService {
 
   /**
    * Actualizar un usuario existente
+   * @param id - ID del usuario a actualizar
+   * @param userData - Datos del usuario a actualizar
+   * @returns Promise<UserResponse>
    */
   static async updateUser(id: number, userData: UpdateUser): Promise<UserResponse> {
     try {
@@ -182,86 +256,31 @@ export class UserService {
       }
 
       return {
-        data: data as User,
+        data: data,
         error: null,
         loading: false
       }
-    } catch (error) {
+    } catch (err) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
+        error: err instanceof Error ? err.message : 'Error desconocido al actualizar usuario',
         loading: false
       }
     }
   }
 
-  /**
-   * Eliminar un usuario
-   */
-  static async deleteUser(id: number): Promise<{ success: boolean; error: string | null }> {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', id)
 
-      if (error) {
-        return {
-          success: false,
-          error: error.message
-        }
-      }
-
-      return {
-        success: true,
-        error: null
-      }
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
-      }
-    }
-  }
 
   /**
-   * Verificar si un email ya existe
-   */
-  static async checkEmailExists(email: string): Promise<{ exists: boolean; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .single()
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        return {
-          exists: false,
-          error: error.message
-        }
-      }
-
-      return {
-        exists: !!data,
-        error: null
-      }
-    } catch (error) {
-      return {
-        exists: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
-      }
-    }
-  }
-
-  /**
-   * Verificar si un nickname ya existe
+   * Verificar si un nick_name ya existe
+   * @param nickName - Nick name a verificar
+   * @returns Promise<{ exists: boolean; error: string | null }>
    */
   static async checkNicknameExists(nickName: string): Promise<{ exists: boolean; error: string | null }> {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id')
+        .select('nick_name')
         .eq('nick_name', nickName)
         .single()
 
@@ -276,11 +295,12 @@ export class UserService {
         exists: !!data,
         error: null
       }
-    } catch (error) {
+    } catch (err) {
       return {
         exists: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        error: err instanceof Error ? err.message : 'Error desconocido al verificar nick name'
       }
     }
   }
+
 }

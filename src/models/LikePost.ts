@@ -1,35 +1,35 @@
 /**
- * Interface para la tabla likes_posts
- * Representa un like de un usuario a un post
+ * Interface para la tabla like_posts
+ * Representa un like a un post en el sistema
  */
 export interface LikePost {
   /** ID único del like (clave primaria) */
   id: number
   /** Fecha de creación del like */
   created_at: string
+  /** ID del post que se le dio like (clave foránea) */
+  post_id: number
   /** ID del usuario que dio el like (clave foránea) */
   user_id: string
-  /** ID del post que recibió el like (clave foránea) */
-  post_id: number
 }
 
 /**
- * Interface para crear un nuevo like a un post
+ * Interface para crear un nuevo like de post
  * Excluye campos que se generan automáticamente
  */
 export interface CreateLikePost {
-  user_id: string
   post_id: number
+  user_id: string
 }
 
 /**
- * Interface para actualizar un like existente
+ * Interface para actualizar un like de post existente
  * Todos los campos son opcionales excepto el ID
  */
 export interface UpdateLikePost {
   id: number
-  user_id?: string
   post_id?: number
+  user_id?: string
 }
 
 /**
@@ -57,8 +57,7 @@ export interface LikePostsResponse {
 export interface LikePostWithUser extends LikePost {
   user?: {
     id: number
-    name: string
-    last_name: string
+    complete_name: string
     nick_name: string
   }
 }
@@ -72,6 +71,8 @@ export interface LikePostWithPost extends LikePost {
     id: number
     description: string
     img_path: string
+    likes: number
+    user_id: string
   }
 }
 
@@ -82,13 +83,15 @@ export interface LikePostWithPost extends LikePost {
 export interface LikePostWithDetails extends LikePost {
   user?: {
     id: number
-    name: string
-    last_name: string
+    complete_name: string
     nick_name: string
+    profile_image: string
   }
   post?: {
     id: number
     description: string
     img_path: string
+    likes: number
+    user_id: string
   }
 }

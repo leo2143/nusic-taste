@@ -1,20 +1,22 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { PostService } from '@/services/postService.js'
+import {AuthService} from '@/services/authService.js'
 import { CommentService } from '@/services/commentService.js'
-import { store } from '@/lib/store.js'
-import { AuthService } from '@/services/authService'
+import { UserService } from '@/services/userService.js'
 import AppStateDisplay from '@/components/AppStateDisplay.vue'
 import AppPostItem from '@/components/AppPostItem.vue'
-import AppPostForm from '../../components/AppPostForm.vue'
+import AppPostForm from '@/components/AppPostForm.vue'
+
+import { store } from '@/lib/store.js'
 
 export default defineComponent({
-  name: 'AppPosts',
+  name: 'AppUser',
   components: {
     AppStateDisplay,
     AppPostItem,
     AppPostForm
-},
+  },
   data() {
     return {
       posts: [],
@@ -22,12 +24,18 @@ export default defineComponent({
       postComments: {}, // Comentarios por post
       loading: false,
       error: null,
-      showPostForm: false,
+      isCurrentUserProfile: false,
+      isEditMode: false,
       editingPost: null,
-      isEditMode: false
+      showPostForm: false
     }
   },
-  
+  props: {
+    nick_name: {
+      type: String,
+      required: true
+    }
+  },
   computed: {
     hasPosts() {
       return this.posts && this.posts.length > 0
@@ -45,13 +53,28 @@ export default defineComponent({
       return 'success'
     }
   },
+  watch: {
+    // ✅ Watcher para el prop nick_name
+    nick_name: {
+      handler(newNickName, oldNickName) {
+        if (newNickName && newNickName !== oldNickName) {
+          console.log('nick_name cambió de', oldNickName, 'a', newNickName)
+          this.fetchPosts()
+        }
+      },
+      immediate: false // No ejecutar inmediatamente, ya se ejecuta en mounted
+    }
+  },
   methods: {
+  
     async fetchPosts() {
       this.loading = true
       this.error = null
       
       try {
-        const response = await PostService.getAllPosts()
+        await this.handeUserProfile()
+
+        const response = await PostService.getPostsByUserId(this.user?.id)
         
         if (response.error) {
           this.error = response.error
@@ -71,16 +94,24 @@ export default defineComponent({
         this.loading = false
       }
     },
-    // Métodos para manejar eventos del componente AppPostItem
-    sharePost(post) {
-      // TODO: Implementar lógica de compartir
-      console.log('Share post:', post)
+
+
+    async handeUserProfile() {
+      if (this.user?.nick_name !== this.nick_name) {
+        this.isCurrentUserProfile = false
+        const response = await UserService.getUserByNickName(this.nick_name)
+        
+        if (response.data) {
+          this.user = response.data
+        } else {
+          this.error = response.error || 'Usuario no encontrado'
+          this.user = null
+        }
+      } else {
+        this.isCurrentUserProfile = true
+      }
     },
 
-    viewPost(post) {
-      // TODO: Implementar lógica de ver post
-      console.log('View post:', post)
-    },
     // Método para cargar comentarios de todos los posts
     async loadCommentsForAllPosts() {
       for (const post of this.posts) {
@@ -108,6 +139,7 @@ export default defineComponent({
       return this.postComments[postId] || []
     },
 
+    // Métodos para manejar eventos del componente AppPostItem
 
     // Método para manejar cuando se crea un comentario
     handleCommentCreated(newComment) {
@@ -135,23 +167,6 @@ export default defineComponent({
         post.likes = likeData.likes_count || 0
       }
     },
-    async retryFetch() {
-      await this.fetchPosts()
-    },
-
-    // Método para crear un nuevo post
-    createNewPost() {
-      this.editingPost = null
-      this.isEditMode = false
-      this.showPostForm = true
-    },
-
-    // Método para editar un post
-    editPost(post) {
-      this.editingPost = post
-      this.isEditMode = true
-      this.showPostForm = true
-    },
 
     // Método para manejar cuando se guarda un post
     handlePostSaved(postData) {
@@ -177,6 +192,39 @@ export default defineComponent({
       this.isEditMode = false
     },
 
+
+    async deletePost(id) {
+      if (confirm('¿Estás seguro de que quieres eliminar este post?')) {
+        const result = await PostService.deletePost(id)
+        if (result.success) {
+          await this.fetchPosts()
+        } else {
+          alert('Error al eliminar el post: ' + result.error)
+        }
+      }
+    },
+
+    async retryFetch() {
+      await this.fetchPosts()
+    },
+
+
+
+
+    // Método para editar un post
+    editPost(post) {
+      this.editingPost = post
+      this.isEditMode = true
+      this.showPostForm = true
+    },
+
+    // Método para crear un nuevo post
+    createNewPost() {
+      this.editingPost = null
+      this.isEditMode = false
+      this.showPostForm = true
+    },
+
     // Método para ver un post (placeholder)
     viewPost(post) {
       console.log('Ver post:', post)
@@ -186,45 +234,54 @@ export default defineComponent({
     // Método para compartir un post (placeholder)
     sharePost(post) {
       console.log('Compartir post:', post)
-    },
 
-    // Método para eliminar un post
-    async deletePost(postId) {
-      if (confirm('¿Estás seguro de que quieres eliminar este post?')) {
-        const result = await PostService.deletePost(postId)
-        if (result.success) {
-          // Remover el post de la lista
-          this.posts = this.posts.filter(p => p.id !== postId)
-          // Remover comentarios del post eliminado
-          delete this.postComments[postId]
-        } else {
-          alert('Error al eliminar el post: ' + result.error)
-        }
-      }
     }
   },
   async mounted() {
-    // Cargar datos del usuario si no están disponibles
-    if (!this.user) {
-      const userData = await AuthService.getCurrentSession()
-      this.user = userData.user
+    const userData = await AuthService.getCurrentSession()
+    this.user = userData.user
+    // Asegurar que el store también tenga el usuario
+    if (userData.user) {
+      store.setUser(userData.user)
     }
     await this.fetchPosts()
   }
+      
 })
 </script>
 
 <template>
 <section class="max-w-2xl mx-auto p-5">
-  <!-- Estados de carga, error y vacío -->
-  <button 
-        v-if="currentUser"
-        @click="createNewPost"
-        class="bg-blue-600 text-white w-full h-15 px-4 py-2 rounded-md text-sm transition-colors hover:bg-blue-700 mb-4"
+  <div class="flex items-center gap-5 bg-white p-5 rounded-xl shadow-md mb-5">
+    <div class="flex-shrink-0">
+      <img 
+        :src="user?.profile_image || '/default-avatar.svg'" 
+        alt="Profile Image"
+        class="w-20 h-20 rounded-full object-cover"
+        @error="handleImageError"
       >
-        + Crear nuevo post
+    </div>
+    <div class="flex-1 min-w-0">
+      <h2 class="text-2xl font-bold text-gray-800 mb-1 truncate">{{user?.nick_name}}</h2>
+      <p class="text-sm text-gray-600">email: {{ user?.email }}</p>
+    </div>
+    <div v-if="isCurrentUserProfile" class="flex gap-3">
+      <button 
+        @click="createNewPost"
+        class="bg-green-600 text-white px-4 py-2 rounded-md text-sm transition-colors hover:bg-green-700"
+      >
+        + Nuevo Post
       </button>
+      <router-link 
+        :to="`/user/detail/${user?.nick_name}`"
+        class="bg-blue-600 text-white no-underline px-5 py-2.5 rounded-md text-sm transition-colors hover:bg-blue-700"
+      >
+        Editar perfil
+      </router-link>
+    </div>
+  </div>
 
+  <!-- Estados de carga, error y vacío -->
   <AppStateDisplay
     :state="currentState"
     :loading-text="'Cargando posts...'"
@@ -237,7 +294,7 @@ export default defineComponent({
     @retry="retryFetch"
   >
     <!-- Estado con datos -->
-    <div v-if="hasPosts" class="flex flex-col gap-5">
+    <div v-if="hasPosts" class="space-y-6">
       <AppPostItem
         v-for="post in posts" 
         :key="post.id"
@@ -245,26 +302,29 @@ export default defineComponent({
         :comments="getPostComments(post.id)"
         :current-user="currentUser"
         :current-user-id="currentUser?.id"
-        :show-actions="false"
+        :show-actions="isCurrentUserProfile"
         :can-comment="true"
+        @delete="deletePost"
+        @edit="editPost"
+        @view="viewPost"
         @like-toggled="handleLikeToggled"
         @share="sharePost"
-        @view="viewPost"
-        @edit="editPost"
-        @delete="deletePost"
         @comment-created="handleCommentCreated"
         @comment-deleted="handleCommentDeleted"
       />
     </div>
-  </AppStateDisplay>
-
-    <!-- Formulario de creación/edición de posts -->
-    <AppPostForm
+  
+  <!-- Formulario de creación/edición de posts -->
+  <AppPostForm
     :is-visible="showPostForm"
     :post="editingPost"
     :current-user="currentUser"
     @post-saved="handlePostSaved"
     @close="handleClosePostForm"
   />
+
+
+  
+  </AppStateDisplay>
 </section>
 </template>
