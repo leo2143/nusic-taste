@@ -155,26 +155,9 @@ El proyecto utiliza **Vue 3 Composition API** con `<script setup>` para:
 - **Código más limpio:** Lógica reutilizable y organizada
 - **Mantenibilidad:** Componentes más fáciles de mantener
 
-### Ejemplo de Componente:
-```vue
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-
-const count = ref(0)
-const doubleCount = computed(() => count.value * 2)
-
-const increment = () => {
-  count.value++
-}
-
-onMounted(() => {
-  console.log('Component mounted')
-})
-</script>
-```
 
 ---
-## 📱 Rutas Principales Resta verificar como utilizar y craear el admin en la tabla de auth
+## 📱 Credenciales
 
 user_admin ->  tabla de user (no implementado el admin desde la tabla de auth)
 email: leitoorellana58@gmail.com
