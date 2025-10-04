@@ -1,5 +1,6 @@
 
 <template>
+  <section class="h-screen space-y-8  rounded-lg shadow-lg p-8 flex justify-center items-center">
           <div class="max-w-md w-full space-y-8 bg-white rounded-lg shadow-lg p-8">
         <div>
           <h2 class="mt-2 text-center text-3xl font-extrabold text-gray-900">
@@ -9,8 +10,8 @@
             Ingresa con tu correo y contraseña para continuar
           </p>
         </div>
-        <form class="mt-8 space-y-6" @submit.prevent="handleLogin" novalidate>
-          <div class="rounded-md shadow-sm -space-y-px">
+        <form method="post" class="mt-8 space-y-6" @submit.prevent="handleLogin" novalidate>
+          <div class="">
             <div class="mb-4">
               <label for="email" class="block text-sm font-medium text-gray-700">
                 Correo electrónico
@@ -65,17 +66,17 @@
           </div>
         </form>
         <div class="mt-4 text-center">
-          <router-link to="/registro" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+          <router-link to="/register" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
             ¿No tienes cuenta? Regístrate
           </router-link>
         </div>
       </div>
-
+    </section>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import supabase from '@/lib/supabaseClient.js'
+import { AuthService } from '@/services/authService'
 export default defineComponent({
   name: 'AppSignIn',
   components: {
@@ -97,29 +98,12 @@ export default defineComponent({
      * @returns {boolean}
      */
     validateForm(): boolean {
-      this.errors = {}
-
-      if (!this.form.email.trim()) {
-        this.errors.email = 'El correo electrónico es requerido'
-      } else if (!this.isValidEmail(this.form.email)) {
-        this.errors.email = 'Ingrese un correo electrónico válido'
-      }
-
-      if (!this.form.password) {
-        this.errors.password = 'La contraseña es requerida'
-      }
+      this.errors = AuthService.validateLoginCredentials({
+        email: this.form.email,
+        password: this.form.password
+      })
 
       return Object.keys(this.errors).length === 0
-    },
-
-    /**
-     * Valida el formato del correo electrónico
-     * @param {string} email
-     * @returns {boolean}
-     */
-    isValidEmail(email: string): boolean {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return emailRegex.test(email)
     },
 
     /**
@@ -132,20 +116,16 @@ export default defineComponent({
       this.errors.submit = ''
 
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const response = await AuthService.signIn({
           email: this.form.email,
           password: this.form.password
         })
 
-        if (error) {
-          if (error.message === 'Invalid login credentials') {
-            this.errors.submit = 'Correo o contraseña incorrectos'
-          } else {
-            this.errors.submit = error.message
-          }
+        if (!response.success) {
+          this.errors.submit = response.error || 'Error al iniciar sesión'
           return
         }
-
+        console.log("paso el response y logeo")
         // Redirigir al usuario a la página principal o dashboard
         this.$router.push({ path: '/' })
       } catch (err: any) {

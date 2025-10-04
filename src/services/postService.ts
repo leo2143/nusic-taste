@@ -1,170 +1,17 @@
 /**
- * Servicio para manejar operaciones CRUD de posts
- * Utiliza Supabase para las operaciones de base de datos
+ * Servicio para manejo de posts
+ * Proporciona métodos para operaciones CRUD de posts
  */
 import supabase from '@/lib/supabaseClient.js'
-import type { 
-  Post, 
-  CreatePost, 
-  UpdatePost, 
-  PostResponse, 
-  PostsResponse,
-  PostWithUser,
-  PostFilters 
-} from '@/models'
+import { LikePostService } from './likePostService.js'
+import type { CreatePost, UpdatePost, PostResponse, PostsResponse, PostWithUser } from '@/models'
 
 export class PostService {
   /**
    * Obtener todos los posts
+   * @returns Promise<PostsResponse>
    */
-  static async getAllPosts(filters?: PostFilters): Promise<PostsResponse> {
-    try {
-      let query = supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      // Aplicar filtros si existen
-      if (filters) {
-        if (filters.description) {
-          query = query.ilike('description', `%${filters.description}%`)
-        }
-        if (filters.likes_min) {
-          query = query.gte('likes', filters.likes_min)
-        }
-        if (filters.likes_max) {
-          query = query.lte('likes', filters.likes_max)
-        }
-        if (filters.created_after) {
-          query = query.gte('created_at', filters.created_after)
-        }
-        if (filters.created_before) {
-          query = query.lte('created_at', filters.created_before)
-        }
-      }
-
-      const { data, error } = await query
-
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data as Post[],
-        error: null,
-        loading: false
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        loading: false
-      }
-    }
-  }
-
-  /**
-   * Obtener posts con información del usuario
-   */
-  static async getPostsWithUser(filters?: PostFilters): Promise<PostsResponse> {
-    try {
-      let query = supabase
-        .from('posts')
-        .select(`
-          *,
-          user:users!posts_user_id_fkey (
-            id,
-            name,
-            last_name,
-            nick_name
-          )
-        `)
-        .order('created_at', { ascending: false })
-
-      // Aplicar filtros si existen
-      if (filters) {
-        if (filters.description) {
-          query = query.ilike('description', `%${filters.description}%`)
-        }
-        if (filters.likes_min) {
-          query = query.gte('likes', filters.likes_min)
-        }
-        if (filters.likes_max) {
-          query = query.lte('likes', filters.likes_max)
-        }
-        if (filters.created_after) {
-          query = query.gte('created_at', filters.created_after)
-        }
-        if (filters.created_before) {
-          query = query.lte('created_at', filters.created_before)
-        }
-      }
-
-      const { data, error } = await query
-
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data as PostWithUser[],
-        error: null,
-        loading: false
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        loading: false
-      }
-    }
-  }
-
-  /**
-   * Obtener un post por ID
-   */
-  static async getPostById(id: number): Promise<PostResponse> {
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data as Post,
-        error: null,
-        loading: false
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        loading: false
-      }
-    }
-  }
-
-  /**
-   * Obtener un post por ID con información del usuario
-   */
-  static async getPostByIdWithUser(id: number): Promise<PostResponse> {
+  static async getAllPosts(): Promise<PostsResponse> {
     try {
       const { data, error } = await supabase
         .from('posts')
@@ -172,12 +19,70 @@ export class PostService {
           *,
           user:users!posts_user_id_fkey (
             id,
-            name,
-            last_name,
-            nick_name
+            complete_name,
+            nick_name,
+            profile_image
           )
         `)
-        .eq('id', id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        return {
+          data: null,
+          error: error.message,
+          loading: false
+        }
+      }
+
+      // Obtener conteos de likes para todos los posts usando el servicio optimizado
+      const postIds = (data as PostWithUser[]).map(post => post.id)
+      const { counts: likesCount, error: likesError } = await LikePostService.countLikesByPosts(postIds)
+
+      if (likesError) {
+        console.warn('Error obteniendo conteos de likes:', likesError)
+        // Continuar sin likes en lugar de fallar completamente
+      }
+
+      // Agregar conteo de likes a cada post
+      const postsWithLikes = (data as PostWithUser[]).map(post => ({
+        ...post,
+        likes: likesCount[post.id] || 0
+      }))
+
+      return {
+        data: postsWithLikes,
+        error: null,
+        loading: false
+      }
+    } catch (err) {
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Error desconocido al obtener posts',
+        loading: false
+      }
+    }
+  }
+
+
+  /**
+   * Crear un nuevo post
+   * @param postData - Datos del post a crear
+   * @returns Promise<PostResponse>
+   */
+  static async createPost(postData: CreatePost): Promise<PostResponse> {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .insert([postData])
+        .select(`
+          *,
+          user:users!posts_user_id_fkey (
+            id,
+            complete_name,
+            nick_name,
+            profile_image
+          )
+        `)
         .single()
 
       if (error) {
@@ -193,76 +98,10 @@ export class PostService {
         error: null,
         loading: false
       }
-    } catch (error) {
+    } catch (err) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        loading: false
-      }
-    }
-  }
-
-  /**
-   * Obtener posts por usuario
-   */
-  static async getPostsByUser(userId: string): Promise<PostsResponse> {
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data as Post[],
-        error: null,
-        loading: false
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        loading: false
-      }
-    }
-  }
-
-  /**
-   * Crear un nuevo post
-   */
-  static async createPost(postData: CreatePost): Promise<PostResponse> {
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .insert([postData])
-        .select()
-        .single()
-
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data as Post,
-        error: null,
-        loading: false
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
+        error: err instanceof Error ? err.message : 'Error desconocido al crear post',
         loading: false
       }
     }
@@ -270,6 +109,9 @@ export class PostService {
 
   /**
    * Actualizar un post existente
+   * @param id - ID del post a actualizar
+   * @param postData - Datos del post a actualizar
+   * @returns Promise<PostResponse>
    */
   static async updatePost(id: number, postData: UpdatePost): Promise<PostResponse> {
     try {
@@ -277,7 +119,15 @@ export class PostService {
         .from('posts')
         .update(postData)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          user:users!posts_user_id_fkey (
+            id,
+            complete_name,
+            nick_name,
+            profile_image
+          )
+        `)
         .single()
 
       if (error) {
@@ -289,14 +139,14 @@ export class PostService {
       }
 
       return {
-        data: data as Post,
+        data: data as PostWithUser,
         error: null,
         loading: false
       }
-    } catch (error) {
+    } catch (err) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
+        error: err instanceof Error ? err.message : 'Error desconocido al actualizar post',
         loading: false
       }
     }
@@ -304,8 +154,10 @@ export class PostService {
 
   /**
    * Eliminar un post
+   * @param id - ID del post a eliminar
+   * @returns Promise<{ success: boolean; error?: string }>
    */
-  static async deletePost(id: number): Promise<{ success: boolean; error: string | null }> {
+  static async deletePost(id: number): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase
         .from('posts')
@@ -320,28 +172,37 @@ export class PostService {
       }
 
       return {
-        success: true,
-        error: null
+        success: true
       }
-    } catch (error) {
+    } catch (err) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        error: err instanceof Error ? err.message : 'Error desconocido al eliminar post'
       }
     }
   }
 
+
   /**
-   * Incrementar likes de un post
+   * Obtener posts por usuario (solo IDs de posts)
+   * @param userId - ID del usuario
+   * @returns Promise<PostsResponse>
    */
-  static async incrementLikes(id: number): Promise<PostResponse> {
+  static async getPostsByUserId(userId: string): Promise<PostsResponse> {
     try {
       const { data, error } = await supabase
         .from('posts')
-        .update({ likes: supabase.raw('likes + 1') })
-        .eq('id', id)
-        .select()
-        .single()
+        .select(`
+          *,
+          user:users!posts_user_id_fkey (
+            id,
+            complete_name,
+            nick_name,
+            profile_image
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
 
       if (error) {
         return {
@@ -351,51 +212,34 @@ export class PostService {
         }
       }
 
+      // Obtener conteos de likes para todos los posts usando el servicio optimizado
+      const postIds = (data as PostWithUser[]).map(post => post.id)
+      const { counts: likesCount, error: likesError } = await LikePostService.countLikesByPosts(postIds)
+
+      if (likesError) {
+        console.warn('Error obteniendo conteos de likes:', likesError)
+        // Continuar sin likes en lugar de fallar completamente
+      }
+
+      // Agregar conteo de likes a cada post
+      const postsWithLikes = (data as PostWithUser[]).map(post => ({
+        ...post,
+        likes: likesCount[post.id] || 0
+      }))
+
       return {
-        data: data as Post,
+        data: postsWithLikes,
         error: null,
         loading: false
       }
-    } catch (error) {
+    } catch (err) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
+        error: err instanceof Error ? err.message : 'Error desconocido al obtener posts del usuario',
         loading: false
       }
     }
   }
 
-  /**
-   * Decrementar likes de un post
-   */
-  static async decrementLikes(id: number): Promise<PostResponse> {
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .update({ likes: supabase.raw('likes - 1') })
-        .eq('id', id)
-        .select()
-        .single()
 
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data as Post,
-        error: null,
-        loading: false
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-        loading: false
-      }
-    }
-  }
 }

@@ -1,6 +1,7 @@
-
 <template>
-  <div class="max-w-md w-full space-y-8 bg-white rounded-lg shadow-lg p-8">
+<section class="h-screen space-y-8  rounded-lg shadow-lg p-8 flex justify-center items-center ">
+
+  <div class="max-w-md w-full space-y-8 bg-white rounded-lg shadow-lg p-8 ">
     <div>
       <h2 class="mt-2 text-center text-3xl font-extrabold text-gray-900">
         Crear Cuenta
@@ -9,8 +10,8 @@
         Regístrate con tu correo y contraseña para comenzar
       </p>
     </div>
-    <form class="mt-8 space-y-6" @submit.prevent="handleSignUp" novalidate>
-      <div class="rounded-md shadow-sm -space-y-px">
+    <form class="mt-8 space-y-6" @submit.prevent="handleSignUp" novalidate method="post">
+      <div class="">
         <div class="mb-4">
           <label for="email" class="block text-sm font-medium text-gray-700">
             Correo electrónico
@@ -29,6 +30,47 @@
           />
           <p v-if="errors.email" id="email-error" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
         </div>
+        
+        <div class="mb-4">
+          <label for="nick_name" class="block text-sm font-medium text-gray-700">
+            Nombre de usuario
+          </label>
+          <input
+            id="nick_name"
+            name="nick_name"
+            type="text"
+            autocomplete="username"
+            v-model="form.nick_name"
+            required
+            placeholder="Ej: juan123"
+            class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+            :class="{ 'border-red-500': errors.nick_name }"
+            aria-invalid="true"
+            aria-describedby="nick_name-error"
+          />
+          <p v-if="errors.nick_name" id="nick_name-error" class="mt-1 text-sm text-red-600">{{ errors.nick_name }}</p>
+        </div>
+
+        <div class="mb-4">
+          <label for="complete_name" class="block text-sm font-medium text-gray-700">
+            Nombre completo
+          </label>
+          <input
+            id="complete_name"
+            name="complete_name"
+            type="text"
+            autocomplete="name"
+            v-model="form.complete_name"
+            required
+            placeholder="Ej: Juan Pérez"
+            class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+            :class="{ 'border-red-500': errors.complete_name }"
+            aria-invalid="true"
+            aria-describedby="complete_name-error"
+          />
+          <p v-if="errors.complete_name" id="complete_name-error" class="mt-1 text-sm text-red-600">{{ errors.complete_name }}</p>
+        </div>
+        
         <div class="mb-4">
           <label for="password" class="block text-sm font-medium text-gray-700">
             Contraseña
@@ -88,11 +130,12 @@
       </router-link>
     </div>
   </div>
+</section>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import supabase from '@/lib/supabaseClient.js'
+import { AuthService } from '@/services/authService'
 
 export default defineComponent({
   name: 'AppSignUp',
@@ -100,6 +143,8 @@ export default defineComponent({
     return {
       form: {
         email: '',
+        nick_name: '',
+        complete_name: '',
         password: '',
         confirmPassword: ''
       },
@@ -113,37 +158,15 @@ export default defineComponent({
      * @returns {boolean}
      */
     validateForm(): boolean {
-      this.errors = {}
-
-      if (!this.form.email.trim()) {
-        this.errors.email = 'El correo electrónico es requerido'
-      } else if (!this.isValidEmail(this.form.email)) {
-        this.errors.email = 'Ingrese un correo electrónico válido'
-      }
-
-      if (!this.form.password) {
-        this.errors.password = 'La contraseña es requerida'
-      } else if (this.form.password.length < 6) {
-        this.errors.password = 'La contraseña debe tener al menos 6 caracteres'
-      }
-
-      if (!this.form.confirmPassword) {
-        this.errors.confirmPassword = 'Confirma tu contraseña'
-      } else if (this.form.password !== this.form.confirmPassword) {
-        this.errors.confirmPassword = 'Las contraseñas no coinciden'
-      }
+      this.errors = AuthService.validateSignUpCredentials({
+        email: this.form.email,
+        nick_name: this.form.nick_name,
+        complete_name: this.form.complete_name,
+        password: this.form.password,
+        confirmPassword: this.form.confirmPassword
+      })
 
       return Object.keys(this.errors).length === 0
-    },
-
-    /**
-     * Valida el formato del correo electrónico
-     * @param {string} email
-     * @returns {boolean}
-     */
-    isValidEmail(email: string): boolean {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return emailRegex.test(email)
     },
 
     /**
@@ -151,22 +174,24 @@ export default defineComponent({
      */
     async handleSignUp() {
       if (!this.validateForm()) return
-
+      if (await AuthService.checkNicknameExists(this.form.nick_name)) {
+        this.errors.nick_name = 'El nombre de usuario ya está en uso'
+        return
+      }
       this.isSubmitting = true
       this.errors.submit = ''
 
       try {
-        const { data, error } = await supabase.auth.signUp({
+        const response = await AuthService.signUp({
           email: this.form.email,
-          password: this.form.password
+          nick_name: this.form.nick_name,
+          complete_name: this.form.complete_name,
+          password: this.form.password,
+          confirmPassword: this.form.confirmPassword
         })
 
-        if (error) {
-          if (error.message === 'User already registered') {
-            this.errors.submit = 'El usuario ya está registrado'
-          } else {
-            this.errors.submit = error.message
-          }
+        if (!response.success) {
+          this.errors.submit = response.error || 'Error al registrar usuario'
           return
         }
 

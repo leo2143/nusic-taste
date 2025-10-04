@@ -9,8 +9,8 @@
             <h3 class="text-2xl font-bold text-white">Music Taste</h3>
           </div>
           <p class="text-gray-300 mb-4 text-sm leading-relaxed">
-            Descubre tu verdadero gusto musical con nuestra plataforma inteligente. 
-            Analizamos tus preferencias y te conectamos con la música que realmente amas.
+            Una plataforma social para compartir tu pasión por la música. 
+            Crea posts, interactúa con otros usuarios y descubre nuevas canciones y artistas.
           </p>
           <div class="flex space-x-4">
             <a 
@@ -66,15 +66,7 @@
             </li>
             <li>
               <router-link 
-                to="/chat" 
-                class="text-gray-300 hover:text-white transition-colors text-sm"
-              >
-                Chat Musical
-              </router-link>
-            </li>
-            <li>
-              <router-link 
-                to="/iniciar-sesion" 
+                to="/login" 
                 class="text-gray-300 hover:text-white transition-colors text-sm"
               >
                 Iniciar Sesión
@@ -82,10 +74,18 @@
             </li>
             <li>
               <router-link 
-                to="/registro" 
+                to="/register" 
                 class="text-gray-300 hover:text-white transition-colors text-sm"
               >
                 Registro
+              </router-link>
+            </li>
+            <li>
+              <router-link 
+                to="/" 
+                class="text-gray-300 hover:text-white transition-colors text-sm"
+              >
+                Explorar Posts
               </router-link>
             </li>
             <li>
@@ -93,7 +93,7 @@
                 href="#" 
                 class="text-gray-300 hover:text-white transition-colors text-sm"
               >
-                Explorar Géneros
+                Descubrir Usuarios
               </a>
             </li>
           </ul>
@@ -108,7 +108,7 @@
                 href="#" 
                 class="text-gray-300 hover:text-white transition-colors text-sm"
               >
-                Análisis de Gustos
+                Crear Posts
               </a>
             </li>
             <li>
@@ -116,7 +116,7 @@
                 href="#" 
                 class="text-gray-300 hover:text-white transition-colors text-sm"
               >
-                Recomendaciones IA
+                Dar Likes y Comentarios
               </a>
             </li>
             <li>
@@ -124,7 +124,7 @@
                 href="#" 
                 class="text-gray-300 hover:text-white transition-colors text-sm"
               >
-                Playlists Personalizadas
+                Perfiles de Usuario
               </a>
             </li>
             <li>
@@ -132,7 +132,7 @@
                 href="#" 
                 class="text-gray-300 hover:text-white transition-colors text-sm"
               >
-                Descubrir Artistas
+                Compartir Música
               </a>
             </li>
             <li>
@@ -140,7 +140,7 @@
                 href="#" 
                 class="text-gray-300 hover:text-white transition-colors text-sm"
               >
-                Estadísticas Musicales
+                Interacción Social
               </a>
             </li>
           </ul>
@@ -177,33 +177,7 @@
       </div>
 
       <!-- Newsletter Subscription -->
-      <div class="mt-12 pt-8 border-t border-gray-800">
-        <div class="max-w-md mx-auto text-center">
-          <h4 class="text-lg font-semibold mb-2">Mantente al día</h4>
-          <p class="text-gray-300 text-sm mb-4">
-            Recibe las últimas recomendaciones musicales y actualizaciones
-          </p>
-          <form @submit.prevent="handleNewsletterSubmit" class="flex flex-col sm:flex-row gap-2">
-            <input
-              v-model="newsletterEmail"
-              type="email"
-              placeholder="Tu email"
-              required
-              class="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button
-              type="submit"
-              :disabled="isNewsletterSubmitting"
-              class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-            >
-              {{ isNewsletterSubmitting ? 'Enviando...' : 'Suscribirse' }}
-            </button>
-          </form>
-          <p v-if="newsletterMessage" class="mt-2 text-sm" :class="newsletterMessageType === 'success' ? 'text-green-400' : 'text-red-400'">
-            {{ newsletterMessage }}
-          </p>
-        </div>
-      </div>
+   
 
       <!-- Bottom Footer -->
       <div class="mt-12 pt-8 border-t border-gray-800">
@@ -259,10 +233,10 @@ export default defineComponent({
       this.newsletterMessage = ''
       
       try {
-        // Simular envío de newsletter (aquí iría la integración con Supabase)
+        // Simular envío de newsletter (aquí iría la integración con Supabase para suscripciones)
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        this.newsletterMessage = '¡Gracias por suscribirte! Te mantendremos informado.'
+        this.newsletterMessage = '¡Gracias por suscribirte! Te notificaremos sobre nuevos posts y actualizaciones.'
         this.newsletterMessageType = 'success'
         this.newsletterEmail = ''
         

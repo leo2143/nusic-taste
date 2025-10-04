@@ -11,13 +11,14 @@ export default {
 </script>
 
 <template>
-  <div id="app" class="min-h-screen bg-gray-50">
+  <div id="app" class="min-h-screen bg-gray-50 flex flex-col">
     <AppHeader />
-    <main>
+    <main class="flex-1">
       <router-view />
     </main>
     <AppFooter /> 
   </div>
 </template>
 
-<style scoped></style>  
+<style scoped>
+</style>  

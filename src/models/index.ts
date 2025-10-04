@@ -92,7 +92,7 @@ export interface PaginatedResponse<T> {
 
 // Filtros para usuarios
 export interface UserFilters {
-  name?: string
+  complete_name?: string
   email?: string
   nick_name?: string
   gender?: string

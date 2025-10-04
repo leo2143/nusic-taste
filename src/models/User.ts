@@ -3,16 +3,14 @@
  * Representa un usuario en el sistema
  */
 export interface User {
-  id: number
-
-  name: string
-  last_name: string
+  id: string
+  complete_name: string
   email: string
   nick_name: string
   age: number
   gender: string
-  user_id: string
   profile_image: string
+  is_admin?: boolean
 }
 
 /**
@@ -20,13 +18,13 @@ export interface User {
  * Excluye campos que se generan automáticamente
  */
 export interface CreateUser {
-  name: string
-  last_name: string
+  id: string
+  complete_name: string
   email: string
   nick_name: string
   age: number
   gender: string
-  user_id: string
+
   profile_image: string
 }
 
@@ -35,16 +33,15 @@ export interface CreateUser {
  * Todos los campos son opcionales excepto el ID
  */
 export interface UpdateUser {
-  id: number
-  name?: string
-  last_name?: string
+  id: string
+  complete_name?: string
   email?: string
   nick_name?: string
   age?: number
   gender?: string
-  user_id?: string
   profile_image?: string
-  }
+  is_admin?: boolean
+}
 
 /**
  * Interface para la respuesta de la API de usuarios
