@@ -164,9 +164,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import type { PropType } from 'vue'
-import type { Post, CommentWithUser, User } from '@/models'
-import { CommentService } from '@/services/commentService.js'
-import { LikePostService } from '@/services/likePostService.js'
+import type { Post, CommentWithUser, User, CreateComment } from '@/models'
+import { CommentService } from '@/services/commentService'
+import { LikePostService } from '@/services/likePostService'
 
 export default defineComponent({
   name: 'AppPostItem',
@@ -235,7 +235,7 @@ export default defineComponent({
       if (!this.currentUserId) return
       
       try {
-        const response = await LikePostService.checkUserLikedPost(this.currentUserId, this.post.id)
+        const response = await LikePostService.checkUserLikedPost(String(this.currentUserId), this.post.id)
         if (!response.error) {
           this.isLiked = response.liked
         }
@@ -256,18 +256,18 @@ export default defineComponent({
         const commentData = {
           comment: commentText,
           post_id: this.post.id,
-          user_id: this.currentUserId
-        }
+          user_id: String(this.currentUserId)
+        } as CreateComment;
 
         const response = await CommentService.createComment(commentData)
         
-        if (response.success && response.data) {
+        if (!response.error && response.data) {
           // Emitir evento para que el componente padre actualice la lista
           this.$emit('comment-created', response.data)
           this.newCommentText = ''
         } else {
           console.error('Error creando comentario:', response.error)
-          alert('Error al crear el comentario')
+          alert('Error al crear el comentario: ' + response.error)
         }
       } catch (err) {
         console.error('Error creando comentario:', err)
@@ -276,7 +276,7 @@ export default defineComponent({
     },
     
     canDeleteComment(comment: CommentWithUser): boolean {
-      return this.currentUser?.id === comment.user?.id || this.showActions
+      return String(this.currentUser?.id) === String(comment.user?.id) || this.showActions
     },
 
     async handleDeleteComment(commentId) {
@@ -303,7 +303,7 @@ export default defineComponent({
       this.isLiking = true
 
       try {
-        const response = await LikePostService.toggleLikePost(this.currentUserId, this.post.id)
+        const response = await LikePostService.toggleLikePost(String(this.currentUserId), this.post.id)
         
         if (response.error) {
           console.error('Error al dar like:', response.error)

@@ -30,10 +30,8 @@ export interface CreateUser {
 
 /**
  * Interface para actualizar un usuario existente
- * Todos los campos son opcionales excepto el ID
  */
 export interface UpdateUser {
-  id: string
   complete_name?: string
   email?: string
   nick_name?: string

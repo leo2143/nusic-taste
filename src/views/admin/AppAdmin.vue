@@ -296,8 +296,8 @@ import { UserService } from '@/services/userService'
 import { AuthService } from '@/services/authService'
 import AppStateDisplay from '@/components/AppStateDisplay.vue'
 import AppModal from '@/components/AppModal.vue'
-import { store } from '@/lib/store.js'
-import type { User, UpdateUser } from '@/models'
+import { store } from '@/lib/store'
+import type { User } from '@/models'
 
 export default defineComponent({
   name: 'AppAdmin',
@@ -307,13 +307,13 @@ export default defineComponent({
   },
   data() {
     return {
-      users: [],
+      users: [] as User[],
       loading: false,
       error: null,
       showEditModal: false,
       showDeleteModal: false,
-      editingUser: null,
-      userToDelete: null,
+      editingUser: null as User | null,
+      userToDelete: null as User | null,
       isCreatingUser: false,
       editForm: {
         complete_name: '',
@@ -382,7 +382,7 @@ export default defineComponent({
       this.showEditModal = true
     },
 
-    editUser(user) {
+    editUser(user: User) {
       this.isCreatingUser = false
       this.editingUser = user
       this.editForm = {
@@ -398,7 +398,7 @@ export default defineComponent({
       this.showEditModal = true
     },
 
-    closeEditModal() {
+    closeEditModal(): void {
       this.showEditModal = false
       this.editingUser = null
       this.isCreatingUser = false
@@ -491,17 +491,17 @@ export default defineComponent({
       }
     },
 
-    confirmDeleteUser(user) {
+    confirmDeleteUser(user: User) {
       this.userToDelete = user
       this.showDeleteModal = true
     },
 
-    closeDeleteModal() {
+    closeDeleteModal(): void {
       this.showDeleteModal = false
       this.userToDelete = null
     },
 
-    async deleteUser() {
+    async deleteUser(): Promise<void> {
       if (!this.userToDelete) return
       
       this.isDeleting = true
@@ -525,7 +525,7 @@ export default defineComponent({
       }
     },
 
-    formatDate(dateString) {
+    formatDate(dateString: string): string {
       if (!dateString) return 'N/A'
       return new Date(dateString).toLocaleDateString('es-ES', {
         year: 'numeric',
@@ -534,7 +534,7 @@ export default defineComponent({
       })
     },
 
-    handleImageError(event) {
+    handleImageError(event: Event): void {
       event.target.src = '/default-avatar.svg'
     }
   }

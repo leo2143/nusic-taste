@@ -234,10 +234,9 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { AuthService } from '@/services/authService.js'
-import { store } from '@/lib/store.js'
-import { useAdmin } from '@/composables/useAdmin.js'
-import type { User } from '@/models'
+import { AuthService } from '@/services/authService'
+import { store } from '@/lib/store'
+import { useAdmin } from '@/composables/useAdmin'
 
 export default defineComponent({
   name: 'AppHeader',

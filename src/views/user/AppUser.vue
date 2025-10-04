@@ -1,14 +1,14 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { PostService } from '@/services/postService.js'
-import {AuthService} from '@/services/authService.js'
-import { CommentService } from '@/services/commentService.js'
-import { UserService } from '@/services/userService.js'
+import { PostService } from '@/services/postService'
+import {AuthService} from '@/services/authService'
+import { CommentService } from '@/services/commentService'
+import { UserService } from '@/services/userService'
 import AppStateDisplay from '@/components/AppStateDisplay.vue'
 import AppPostItem from '@/components/AppPostItem.vue'
 import AppPostForm from '@/components/AppPostForm.vue'
-
-import { store } from '@/lib/store.js'
+import { store } from '@/lib/store'
+import type { User,Comment,Post } from '@/models'
 
 export default defineComponent({
   name: 'AppUser',
@@ -19,9 +19,9 @@ export default defineComponent({
   },
   data() {
     return {
-      posts: [],
-      user: null,
-      postComments: {}, // Comentarios por post
+      posts : [] as Post[],
+      user: null as User | null,
+      postComments: {} as Record<number, Comment[]>, // Comentarios por post
       loading: false,
       error: null,
       isCurrentUserProfile: false,

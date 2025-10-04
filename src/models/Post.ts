@@ -35,7 +35,6 @@ export interface CreatePost {
  * Todos los campos son opcionales excepto el ID
  */
 export interface UpdatePost {
-  id: number
   description?: string
   img_path?: string
   likes?: number

@@ -64,22 +64,7 @@
                 Inicio
               </router-link>
             </li>
-            <li>
-              <router-link 
-                to="/login" 
-                class="text-gray-300 hover:text-white transition-colors text-sm"
-              >
-                Iniciar Sesión
-              </router-link>
-            </li>
-            <li>
-              <router-link 
-                to="/register" 
-                class="text-gray-300 hover:text-white transition-colors text-sm"
-              >
-                Registro
-              </router-link>
-            </li>
+            
             <li>
               <router-link 
                 to="/" 

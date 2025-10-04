@@ -1,12 +1,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { PostService } from '@/services/postService.js'
-import { CommentService } from '@/services/commentService.js'
-import { store } from '@/lib/store.js'
+import { PostService } from '@/services/postService'
+import { CommentService } from '@/services/commentService'
+import { store } from '@/lib/store'
 import { AuthService } from '@/services/authService'
 import AppStateDisplay from '@/components/AppStateDisplay.vue'
 import AppPostItem from '@/components/AppPostItem.vue'
 import AppPostForm from '../../components/AppPostForm.vue'
+import type { Post, User, Comment } from '@/models'
 
 export default defineComponent({
   name: 'AppPosts',
@@ -17,13 +18,13 @@ export default defineComponent({
 },
   data() {
     return {
-      posts: [],
-      user: null,
-      postComments: {}, // Comentarios por post
+      posts: [] as Post[],
+      user: null as User | null,
+      postComments: {} as Record<number, Comment[]>, // Comentarios por post
       loading: false,
       error: null,
       showPostForm: false,
-      editingPost: null,
+      editingPost: null as Post | null,
       isEditMode: false
     }
   },
@@ -147,14 +148,14 @@ export default defineComponent({
     },
 
     // Método para editar un post
-    editPost(post) {
+    editPost(post: Post) {
       this.editingPost = post
       this.isEditMode = true
       this.showPostForm = true
     },
 
     // Método para manejar cuando se guarda un post
-    handlePostSaved(postData) {
+    handlePostSaved(postData: Post) {
       if (this.isEditMode) {
         // Actualizar post existente
         const index = this.posts.findIndex(p => p.id === postData.id)
@@ -171,25 +172,25 @@ export default defineComponent({
     },
 
     // Método para manejar cerrar el formulario
-    handleClosePostForm() {
+    handleClosePostForm(): void {
       this.showPostForm = false
       this.editingPost = null
       this.isEditMode = false
     },
 
     // Método para ver un post (placeholder)
-    viewPost(post) {
+    viewPost(post: Post) {
       console.log('Ver post:', post)
       // Aquí se podría implementar una vista detallada del post
     },
 
     // Método para compartir un post (placeholder)
-    sharePost(post) {
+    sharePost(post: Post) {
       console.log('Compartir post:', post)
     },
 
     // Método para eliminar un post
-    async deletePost(postId) {
+    async deletePost(postId: number) {
       if (confirm('¿Estás seguro de que quieres eliminar este post?')) {
         const result = await PostService.deletePost(postId)
         if (result.success) {

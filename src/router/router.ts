@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { store } from '@/lib/store.js'
-import { useAdmin } from '@/composables/useAdmin.js'
+import { store } from '@/lib/store'
+import { useAdmin } from '@/composables/useAdmin'
 
 const router = createRouter({
   history: createWebHistory(),

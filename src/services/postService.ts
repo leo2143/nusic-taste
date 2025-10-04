@@ -2,8 +2,8 @@
  * Servicio para manejo de posts
  * Proporciona métodos para operaciones CRUD de posts
  */
-import supabase from '@/lib/supabaseClient.js'
-import { LikePostService } from './likePostService.js'
+import supabase from '@/lib/supabaseClient'
+import { LikePostService } from './likePostService'
 import type { CreatePost, UpdatePost, PostResponse, PostsResponse, PostWithUser } from '@/models'
 
 export class PostService {

@@ -2,7 +2,7 @@
  * Servicio de autenticación centralizado
  * Maneja toda la lógica de autenticación: login, logout, registro y verificación de sesión
  */
-import supabase from '@/lib/supabaseClient.js'
+import supabase from '@/lib/supabaseClient'
 import { UserService } from '@/services/userService'
 import type { User } from '@/models'
 

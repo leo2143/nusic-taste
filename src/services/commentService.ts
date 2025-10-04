@@ -2,17 +2,14 @@
  * Servicio para manejar operaciones CRUD de comentarios
  * Utiliza Supabase para las operaciones de base de datos
  */
-import supabase from '@/lib/supabaseClient.js'
+import supabase from '@/lib/supabaseClient'
 import type { 
   Comment, 
   CreateComment, 
-  UpdateComment, 
   CommentResponse, 
   CommentsResponse,
   CommentWithUser,
-  CommentWithPost,
-  CommentWithDetails,
-  CommentFilters 
+
 } from '@/models'
 
 export class CommentService {

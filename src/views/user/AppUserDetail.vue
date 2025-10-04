@@ -208,22 +208,8 @@ export default defineComponent({
       isLoading: false,
       error: null as string | null,
       isSubmitting: false,
-      formData: {
-        complete_name: '',
-        nick_name: '',
-        email: '',
-        age: 0,
-        gender: '',
-        profile_image: ''
-      },
-      originalData: {
-        complete_name: '',
-        nick_name: '',
-        email: '',
-        age: 0,
-        gender: '',
-        profile_image: ''
-      },
+      formData: {} as UpdateUser,
+      originalData: {} as UpdateUser,
       formErrors: {} as Record<string, string>,
       currentImageUrl: '' as string,
       // Constantes para validaciones

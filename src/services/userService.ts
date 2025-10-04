@@ -2,8 +2,8 @@
  * Servicio para manejo de usuarios
  * Proporciona métodos para operaciones CRUD de usuarios
  */
-import supabase from '@/lib/supabaseClient.js'
-import type { User, CreateUser, UpdateUser, UserResponse, UsersResponse } from '@/models'
+import supabase from '@/lib/supabaseClient'
+import type { CreateUser, UpdateUser, UserResponse, UsersResponse } from '@/models'
 
 export class UserService {
 
@@ -192,41 +192,6 @@ export class UserService {
       return {
         data: null,
         error: err instanceof Error ? err.message : 'Error desconocido al obtener usuario',
-        loading: false
-      }
-    }
-  }
-
-  /**
-   * Crear un nuevo usuario
-   * @param userData - Datos del usuario a crear
-   * @returns Promise<UserResponse>
-   */
-  static async createUser(userData: CreateUser): Promise<UserResponse> {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .insert([userData])
-        .select()
-        .single()
-
-      if (error) {
-        return {
-          data: null,
-          error: error.message,
-          loading: false
-        }
-      }
-
-      return {
-        data: data,
-        error: null,
-        loading: false
-      }
-    } catch (err) {
-      return {
-        data: null,
-        error: err instanceof Error ? err.message : 'Error desconocido al crear usuario',
         loading: false
       }
     }

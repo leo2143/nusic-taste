@@ -2,16 +2,8 @@
  * Servicio para manejar operaciones CRUD de likes de posts
  * Utiliza Supabase para las operaciones de base de datos
  */
-import supabase from '@/lib/supabaseClient.js'
+import supabase from '@/lib/supabaseClient'
 import type { 
-  LikePost, 
-  CreateLikePost, 
-  LikePostResponse, 
-  LikePostsResponse,
-  LikePostWithUser,
-  LikePostWithPost,
-  LikePostWithDetails,
-  LikePostFilters 
 } from '@/models'
 
 export class LikePostService {
@@ -77,7 +69,7 @@ export class LikePostService {
   }
 
   /**
-   * Contar likes de múltiples posts en una sola consulta (más eficiente)
+   * Contar likes de un post por id
    */
   static async countLikesByPosts(postIds: number[]): Promise<{ counts: Record<number, number>; error: string | null }> {
     try {
