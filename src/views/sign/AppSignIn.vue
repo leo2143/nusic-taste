@@ -74,68 +74,55 @@
     </section>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { AuthService } from '@/services/authService'
-export default defineComponent({
-  name: 'AppSignIn',
-  components: {
 
-  },
-  data() {
-    return {
-      form: {
-        email: '',
-        password: ''
-      },
-      errors: {} as Record<string, string>,
-      isSubmitting: false
-    }
-  },
-  methods: {
-    /**
-     * Valida el formulario de inicio de sesión
-     * @returns {boolean}
-     */
-    validateForm(): boolean {
-      this.errors = AuthService.validateLoginCredentials({
-        email: this.form.email,
-        password: this.form.password
-      })
+const router = useRouter()
 
-      return Object.keys(this.errors).length === 0
-    },
-
-    /**
-     * Maneja el envío del formulario de inicio de sesión
-     */
-    async handleLogin() {
-      if (!this.validateForm()) return
-
-      this.isSubmitting = true
-      this.errors.submit = ''
-
-      try {
-        const response = await AuthService.signIn({
-          email: this.form.email,
-          password: this.form.password
-        })
-
-        if (!response.success) {
-          this.errors.submit = response.error || 'Error al iniciar sesión'
-          return
-        }
-        console.log("paso el response y logeo")
-        // Redirigir al usuario a la página principal o dashboard
-        this.$router.push({ path: '/' })
-      } catch (err: any) {
-        this.errors.submit = err.message || 'Ocurrió un error inesperado'
-      } finally {
-        this.isSubmitting = false
-      }
-    }
-  }
+const form = ref({
+  email: '',
+  password: ''
 })
+
+const errors = ref<Record<string, string>>({})
+const isSubmitting = ref(false)
+
+const validateForm = (): boolean => {
+  errors.value = AuthService.validateLoginCredentials({
+    email: form.value.email,
+    password: form.value.password
+  })
+
+  return Object.keys(errors.value).length === 0
+}
+
+const handleLogin = async () => {
+  if (!validateForm()) return
+
+  isSubmitting.value = true
+  errors.value.submit = ''
+
+  try {
+    const response = await AuthService.signIn({
+      email: form.value.email,
+      password: form.value.password
+    })
+
+    if (!response.success) {
+      errors.value.submit = response.error || 'Error al iniciar sesión'
+      return
+    }
+    console.log("paso el response y logeo")
+    // Redirigir al usuario a la página principal o dashboard
+    router.push({ path: '/' })
+  } catch (err: any) {
+    errors.value.submit = err.message || 'Ocurrió un error inesperado'
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <style scoped>

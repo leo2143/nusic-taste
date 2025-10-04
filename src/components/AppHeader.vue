@@ -232,97 +232,78 @@
   </header>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { AuthService } from '@/services/authService'
 import { store } from '@/lib/store'
 import { useAdmin } from '@/composables/useAdmin'
 
-export default defineComponent({
-  name: 'AppHeader',
-  data() {
-    return {
-      isMobileMenuOpen: false,
-      isUserMenuOpen: false
-    }
-  },
-  computed: {
-    // ✅ Usar computed properties para reactividad
-    isLoggedIn() {
-      return store.state.isAuthenticated
-    },
-    currentUser() {
-      return store.state.user
-    },
-    userProfileImage() {
-      return this.currentUser?.profile_image || '/default-avatar.svg'
-    },
-    isAdmin() {
-      const { isAdmin } = useAdmin()
-      return isAdmin.value
-    }
-  },
-  watch: {
-    'store.state.isAuthenticated'() {
-      this.$forceUpdate()
-    },
-    'store.state.user'() {
-      this.$forceUpdate()
-    }
-  },
-  methods: {
-    toggleMobileMenu() {
-      this.isMobileMenuOpen = !this.isMobileMenuOpen
-    },
-    closeMobileMenu() {
-      this.isMobileMenuOpen = false
-    },
-    toggleUserMenu() {
-      this.isUserMenuOpen = !this.isUserMenuOpen
-    },
-    closeUserMenu() {
-      this.isUserMenuOpen = false
-    },
-    async handleLogout() {
-      try {
-        const response = await AuthService.signOut()
-        
-        if (!response.success) {
-          console.error('Error signing out:', response.error)
-          return
-        }
-        
-        store.clearUser()
-        
-        this.$forceUpdate()
-        
-        this.closeMobileMenu()
-        this.closeUserMenu()
-        
-        // Redirigir al login
-        this.$router.push('/login')
-      } catch (error) {
-        console.error('Error during logout:', error)
-      }
-    },
-    handleImageError(event: Event) {
-      const img = event.target as HTMLImageElement
-      img.src = '/default-avatar.svg'
-    }
-  },
-  async mounted() {
-    await store.initializeAuth()
+const router = useRouter()
+
+const isMobileMenuOpen = ref(false)
+const isUserMenuOpen = ref(false)
+
+// Computed properties
+const isLoggedIn = computed(() => store.state.isAuthenticated)
+const currentUser = computed(() => store.state.user)
+const userProfileImage = computed(() => currentUser.value?.profile_image || '/default-avatar.svg')
+const { isAdmin } = useAdmin()
+
+// Methods
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false
+}
+
+const toggleUserMenu = () => {
+  isUserMenuOpen.value = !isUserMenuOpen.value
+}
+
+const closeUserMenu = () => {
+  isUserMenuOpen.value = false
+}
+
+const handleLogout = async () => {
+  try {
+    const response = await AuthService.signOut()
     
-    AuthService.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        await store.initializeAuth()
-        this.$forceUpdate()
-      } else if (event === 'SIGNED_OUT') {
-        store.clearUser()
-        this.$forceUpdate()
-      }
-    })
+    if (!response.success) {
+      console.error('Error signing out:', response.error)
+      return
+    }
+    
+    store.clearUser()
+    
+    closeMobileMenu()
+    closeUserMenu()
+    
+    // Redirigir al login
+    router.push('/login')
+  } catch (error) {
+    console.error('Error during logout:', error)
   }
+}
+
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.src = '/default-avatar.svg'
+}
+
+// Lifecycle
+onMounted(async () => {
+  await store.initializeAuth()
+  
+  AuthService.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user) {
+      await store.initializeAuth()
+    } else if (event === 'SIGNED_OUT') {
+      store.clearUser()
+    }
+  })
 })
 </script>
 

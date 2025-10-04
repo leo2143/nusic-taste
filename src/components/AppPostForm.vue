@@ -67,139 +67,139 @@
   </AppModal>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
 import { PostService } from '@/services/postService.js'
 import AppModal from './AppModal.vue'
+import type { Post, User, CreatePost, UpdatePost } from '@/models'
 
-export default defineComponent({
-  name: 'AppPostForm',
-  components: {
-    AppModal
-  },
-  props: {
-    // Si el modal está visible
-    isVisible: {
-      type: Boolean,
-      default: false
-    },
-    // Datos del post para edición
-    post: {
-      type: Object,
-      default: null
-    },
-    // Usuario actual
-    currentUser: {
-      type: Object,
-      default: null
-    }
-  },
-  data() {
-    return {
-      formData: {
-        id: null,
-        description: '',
-        img_path: '',
-        likes: 0
-      },
-      formErrors: {},
-      isSubmitting: false
-    }
-  },
-  computed: {
-    isEditMode() {
-      return this.formData.id !== null
-    }
-  },
-  watch: {
-    post: {
-      handler(newPost) {
-        if (newPost) {
-          this.initializeForm(newPost)
-        } else {
-          this.resetForm()
-        }
-      },
-      immediate: true
-    }
-  },
-  methods: {
-    initializeForm(post) {
-      this.formData = {
-        id: post.id,
-        description: post.description || '',
-        img_path: post.img_path || '',
-        likes: post.likes || 0
-      }
-    },
+interface Props {
+  isVisible?: boolean
+  post?: Post | null
+  currentUser?: User | null
+}
 
-    resetForm() {
-      this.formData = {
-        id: null,
-        description: '',
-        img_path: '',
-        likes: 0
-      }
-      this.formErrors = {}
-    },
-
-    validateForm() {
-      this.formErrors = {}
-      
-      if (!this.formData.description.trim()) {
-        this.formErrors.description = 'La descripción es requerida'
-      }
-
-      if (!this.isEditMode && !this.formData.img_path.trim()) {
-        this.formErrors.img_path = 'La imagen es requerida'
-      }
-
-      return Object.keys(this.formErrors).length === 0
-    },
-
-    async handleSubmit() {
-      if (!this.validateForm()) {
-        return
-      }
-
-      this.isSubmitting = true
-      this.formErrors = {}
-
-      try {
-        console.log("currentUser:", this.currentUser, "------------------------currentUser")
-        const postData = {
-          description: this.formData.description.trim(),
-          user_id: this.currentUser?.id,
-          img_path: this.formData.img_path,
-          likes: this.formData.likes
-        }
-        console.log(postData,"------------------------postData")
-        let response
-        if (this.isEditMode) {
-          postData.id = this.formData.id
-          response = await PostService.updatePost(this.formData.id, postData)
-        } else {
-          response = await PostService.createPost(postData)
-        }
-
-        if (response.error) {
-          this.formErrors.submit = response.error
-        } else {
-          this.resetForm()
-          this.$emit('post-saved', response.data)
-        }
-      } catch (err) {
-        this.formErrors.submit = err instanceof Error ? err.message : 'Error desconocido'
-      } finally {
-        this.isSubmitting = false
-      }
-    },
-
-    handleClose() {
-      this.resetForm()
-      this.$emit('close')
-    }
-  },
-  emits: ['post-saved', 'close']
+const props = withDefaults(defineProps<Props>(), {
+  isVisible: false,
+  post: null,
+  currentUser: null
 })
+
+const emit = defineEmits<{
+  'post-saved': [post: Post]
+  'close': []
+}>()
+
+interface FormData {
+  id: number | null
+  description: string
+  img_path: string
+  likes: number
+}
+
+interface FormErrors {
+  description?: string
+  img_path?: string
+  user?: string
+  submit?: string
+}
+
+const formData = ref<FormData>({
+  id: null,
+  description: '',
+  img_path: '',
+  likes: 0
+})
+
+const formErrors = ref<FormErrors>({})
+const isSubmitting = ref(false)
+
+const isEditMode = computed(() => {
+  return formData.value.id !== null
+})
+
+const initializeForm = (post: Post) => {
+  formData.value = {
+    id: post.id,
+    description: post.description || '',
+    img_path: post.img_path || '',
+    likes: post.likes || 0
+  }
+}
+
+const resetForm = () => {
+  formData.value = {
+    id: null,
+    description: '',
+    img_path: '',
+    likes: 0
+  }
+  formErrors.value = {}
+}
+
+const validateForm = (): boolean => {
+  formErrors.value = {}
+  
+  if (!formData.value.description.trim()) {
+    formErrors.value.description = 'La descripción es requerida'
+  }
+
+  if (!isEditMode.value && !formData.value.img_path.trim()) {
+    formErrors.value.img_path = 'La imagen es requerida'
+  }
+
+  return Object.keys(formErrors.value).length === 0
+}
+
+const handleSubmit = async () => {
+  if (!validateForm()) {
+    return
+  }
+
+  isSubmitting.value = true
+  formErrors.value = {}
+
+  try {
+    console.log("currentUser:", props.currentUser, "------------------------currentUser")
+    const postData = {
+      description: formData.value.description.trim(),
+      user_id: props.currentUser?.id,
+      img_path: formData.value.img_path,
+      likes: formData.value.likes
+    }
+    console.log(postData,"------------------------postData")
+    let response
+    if (isEditMode.value) {
+      (postData as UpdatePost).id = formData.value.id
+      response = await PostService.updatePost(formData.value.id!, postData as UpdatePost)
+    } else {
+      response = await PostService.createPost(postData as CreatePost)
+    }
+
+    if (response.error) {
+      formErrors.value.submit = response.error
+    } else {
+      resetForm()
+      emit('post-saved', response.data)
+    }
+  } catch (err) {
+    formErrors.value.submit = err instanceof Error ? err.message : 'Error desconocido'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const handleClose = () => {
+  resetForm()
+  emit('close')
+}
+
+// Watch for post changes
+watch(() => props.post, (newPost) => {
+  if (newPost) {
+    initializeForm(newPost)
+  } else {
+    resetForm()
+  }
+}, { immediate: true })
 </script>

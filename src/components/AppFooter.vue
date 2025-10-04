@@ -196,54 +196,46 @@
   </footer>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
 
-export default defineComponent({
-  name: 'AppFooter',
-  data() {
-    return {
-      newsletterEmail: '',
-      isNewsletterSubmitting: false,
-      newsletterMessage: '',
-      newsletterMessageType: 'success' as 'success' | 'error',
-      currentYear: new Date().getFullYear()
-    }
-  },
-  methods: {
-    async handleNewsletterSubmit() {
-      if (!this.newsletterEmail.trim()) return
-      
-      this.isNewsletterSubmitting = true
-      this.newsletterMessage = ''
-      
-      try {
-        // Simular envío de newsletter (aquí iría la integración con Supabase para suscripciones)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        this.newsletterMessage = '¡Gracias por suscribirte! Te notificaremos sobre nuevos posts y actualizaciones.'
-        this.newsletterMessageType = 'success'
-        this.newsletterEmail = ''
-        
-        // Limpiar mensaje después de 5 segundos
-        setTimeout(() => {
-          this.newsletterMessage = ''
-        }, 5000)
-        
-      } catch (error) {
-        this.newsletterMessage = 'Error al suscribirse. Inténtalo de nuevo.'
-        this.newsletterMessageType = 'error'
-        
-        // Limpiar mensaje después de 5 segundos
-        setTimeout(() => {
-          this.newsletterMessage = ''
-        }, 5000)
-      } finally {
-        this.isNewsletterSubmitting = false
-      }
-    }
+const newsletterEmail = ref('')
+const isNewsletterSubmitting = ref(false)
+const newsletterMessage = ref('')
+const newsletterMessageType = ref<'success' | 'error'>('success')
+const currentYear = new Date().getFullYear()
+
+const handleNewsletterSubmit = async () => {
+  if (!newsletterEmail.value.trim()) return
+  
+  isNewsletterSubmitting.value = true
+  newsletterMessage.value = ''
+  
+  try {
+    // Simular envío de newsletter (aquí iría la integración con Supabase para suscripciones)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    newsletterMessage.value = '¡Gracias por suscribirte! Te notificaremos sobre nuevos posts y actualizaciones.'
+    newsletterMessageType.value = 'success'
+    newsletterEmail.value = ''
+    
+    // Limpiar mensaje después de 5 segundos
+    setTimeout(() => {
+      newsletterMessage.value = ''
+    }, 5000)
+    
+  } catch (error) {
+    newsletterMessage.value = 'Error al suscribirse. Inténtalo de nuevo.'
+    newsletterMessageType.value = 'error'
+    
+    // Limpiar mensaje después de 5 segundos
+    setTimeout(() => {
+      newsletterMessage.value = ''
+    }, 5000)
+  } finally {
+    isNewsletterSubmitting.value = false
   }
-})
+}
 </script>
 
 <style scoped>

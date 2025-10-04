@@ -41,60 +41,31 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+interface Props {
+  state: 'loading' | 'error' | 'empty' | 'success'
+  loadingText?: string
+  errorTitle?: string
+  errorMessage?: string
+  emptyIcon?: string
+  emptyTitle?: string
+  emptyMessage?: string
+  showRetry?: boolean
+  retryText?: string
+}
 
-export default defineComponent({
-  name: 'AppStateDisplay',
-  props: {
-    // Estado actual: 'loading', 'error', 'empty', 'success'
-    state: {
-      type: String,
-      required: true,
-      validator: (value) => ['loading', 'error', 'empty', 'success'].includes(value)
-    },
-    
-    // Textos personalizables para estado de carga
-    loadingText: {
-      type: String,
-      default: 'Cargando...'
-    },
-    
-    // Textos personalizables para estado de error
-    errorTitle: {
-      type: String,
-      default: 'Error'
-    },
-    errorMessage: {
-      type: String,
-      default: 'Ha ocurrido un error'
-    },
-    
-    // Textos personalizables para estado vacío
-    emptyIcon: {
-      type: String,
-      default: '📝'
-    },
-    emptyTitle: {
-      type: String,
-      default: 'No hay datos disponibles'
-    },
-    emptyMessage: {
-      type: String,
-      default: 'No se encontraron datos para mostrar en este momento.'
-    },
-    
-    // Configuración del botón de reintentar
-    showRetry: {
-      type: Boolean,
-      default: true
-    },
-    retryText: {
-      type: String,
-      default: 'Reintentar'
-    }
-  },
-  
-  emits: ['retry']
+const props = withDefaults(defineProps<Props>(), {
+  loadingText: 'Cargando...',
+  errorTitle: 'Error',
+  errorMessage: 'Ha ocurrido un error',
+  emptyIcon: '📝',
+  emptyTitle: 'No hay datos disponibles',
+  emptyMessage: 'No se encontraron datos para mostrar en este momento.',
+  showRetry: true,
+  retryText: 'Reintentar'
 })
+
+const emit = defineEmits<{
+  retry: []
+}>()
 </script>

@@ -55,85 +55,64 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { computed } from 'vue'
 
-export default defineComponent({
-  name: 'AppModal',
-  props: {
-    isVisible: {
-      type: Boolean,
-      default: false
-    },
-    title: {
-      type: String,
-      default: ''
-    },
-    size: {
-      type: String,
-      default: 'md',
-      validator: (value) => ['sm', 'md', 'lg', 'xl', '2xl'].includes(value)
-    },
-    showHeader: {
-      type: Boolean,
-      default: true
-    },
-    showFooter: {
-      type: Boolean,
-      default: false
-    },
-    showCloseButton: {
-      type: Boolean,
-      default: true
-    },
-    showCancelButton: {
-      type: Boolean,
-      default: false
-    },
-    showConfirmButton: {
-      type: Boolean,
-      default: false
-    },
-    cancelText: {
-      type: String,
-      default: 'Cancelar'
-    },
-    confirmText: {
-      type: String,
-      default: 'Confirmar'
-    },
-    closeOnOverlay: {
-      type: Boolean,
-      default: true
-    }
-  },
-  computed: {
-    modalSize() {
-      const sizes = {
-        sm: 'max-w-sm',
-        md: 'max-w-md',
-        lg: 'max-w-lg',
-        xl: 'max-w-xl',
-        '2xl': 'max-w-2xl'
-      }
-      return sizes[this.size] || sizes.md
-    }
-  },
-  methods: {
-    close() {
-      this.$emit('close')
-    },
-    
-    confirm() {
-      this.$emit('confirm')
-    },
-    
-    handleOverlayClick() {
-      if (this.closeOnOverlay) {
-        this.close()
-      }
-    }
-  },
-  emits: ['close', 'confirm']
+interface Props {
+  isVisible?: boolean
+  title?: string
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  showHeader?: boolean
+  showFooter?: boolean
+  showCloseButton?: boolean
+  showCancelButton?: boolean
+  showConfirmButton?: boolean
+  cancelText?: string
+  confirmText?: string
+  closeOnOverlay?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isVisible: false,
+  title: '',
+  size: 'md',
+  showHeader: true,
+  showFooter: false,
+  showCloseButton: true,
+  showCancelButton: false,
+  showConfirmButton: false,
+  cancelText: 'Cancelar',
+  confirmText: 'Confirmar',
+  closeOnOverlay: true
 })
+
+const emit = defineEmits<{
+  close: []
+  confirm: []
+}>()
+
+const modalSize = computed(() => {
+  const sizes = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl'
+  }
+  return sizes[props.size] || sizes.md
+})
+
+const close = () => {
+  emit('close')
+}
+
+const confirm = () => {
+  emit('confirm')
+}
+
+const handleOverlayClick = () => {
+  if (props.closeOnOverlay) {
+    close()
+  }
+}
 </script>

@@ -133,79 +133,68 @@
 </section>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { AuthService } from '@/services/authService'
 
-export default defineComponent({
-  name: 'AppSignUp',
-  data() {
-    return {
-      form: {
-        email: '',
-        nick_name: '',
-        complete_name: '',
-        password: '',
-        confirmPassword: ''
-      },
-      errors: {} as Record<string, string>,
-      isSubmitting: false
-    }
-  },
-  methods: {
-    /**
-     * Valida el formulario de registro
-     * @returns {boolean}
-     */
-    validateForm(): boolean {
-      this.errors = AuthService.validateSignUpCredentials({
-        email: this.form.email,
-        nick_name: this.form.nick_name,
-        complete_name: this.form.complete_name,
-        password: this.form.password,
-        confirmPassword: this.form.confirmPassword
-      })
+const router = useRouter()
 
-      return Object.keys(this.errors).length === 0
-    },
-
-    /**
-     * Maneja el envío del formulario de registro
-     */
-    async handleSignUp() {
-      if (!this.validateForm()) return
-      if (await AuthService.checkNicknameExists(this.form.nick_name)) {
-        this.errors.nick_name = 'El nombre de usuario ya está en uso'
-        return
-      }
-      this.isSubmitting = true
-      this.errors.submit = ''
-
-      try {
-        const response = await AuthService.signUp({
-          email: this.form.email,
-          nick_name: this.form.nick_name,
-          complete_name: this.form.complete_name,
-          password: this.form.password,
-          confirmPassword: this.form.confirmPassword
-        })
-
-        if (!response.success) {
-          this.errors.submit = response.error || 'Error al registrar usuario'
-          return
-        }
-
-        // Redirigir o mostrar mensaje de confirmación
-        // Por ejemplo, redirigir a login o mostrar mensaje de verificación
-        this.$router.push({ path: '/login', query: { registered: 'true' } })
-      } catch (err: any) {
-        this.errors.submit = err.message || 'Ocurrió un error inesperado'
-      } finally {
-        this.isSubmitting = false
-      }
-    }
-  }
+const form = ref({
+  email: '',
+  nick_name: '',
+  complete_name: '',
+  password: '',
+  confirmPassword: ''
 })
+
+const errors = ref<Record<string, string>>({})
+const isSubmitting = ref(false)
+
+const validateForm = (): boolean => {
+  errors.value = AuthService.validateSignUpCredentials({
+    email: form.value.email,
+    nick_name: form.value.nick_name,
+    complete_name: form.value.complete_name,
+    password: form.value.password,
+    confirmPassword: form.value.confirmPassword
+  })
+
+  return Object.keys(errors.value).length === 0
+}
+
+const handleSignUp = async () => {
+  if (!validateForm()) return
+  if (await AuthService.checkNicknameExists(form.value.nick_name)) {
+    errors.value.nick_name = 'El nombre de usuario ya está en uso'
+    return
+  }
+  isSubmitting.value = true
+  errors.value.submit = ''
+
+  try {
+    const response = await AuthService.signUp({
+      email: form.value.email,
+      nick_name: form.value.nick_name,
+      complete_name: form.value.complete_name,
+      password: form.value.password,
+      confirmPassword: form.value.confirmPassword
+    })
+
+    if (!response.success) {
+      errors.value.submit = response.error || 'Error al registrar usuario'
+      return
+    }
+
+    // Redirigir o mostrar mensaje de confirmación
+    // Por ejemplo, redirigir a login o mostrar mensaje de verificación
+    router.push({ path: '/login', query: { registered: 'true' } })
+  } catch (err: any) {
+    errors.value.submit = err.message || 'Ocurrió un error inesperado'
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <style scoped>

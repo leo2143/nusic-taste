@@ -4,7 +4,7 @@ Una plataforma social para compartir tu pasión por la música. Los usuarios pue
 
 ## 🚀 Tecnologías Utilizadas
 
-- **Vue 3** - Framework frontend
+- **Vue 3** - Framework frontend con Composition API
 - **Vite** - Build tool
 - **Supabase** - Backend (Postgres + Auth + Realtime)
 - **Tailwind CSS** - Estilos
@@ -59,11 +59,12 @@ El proyecto utiliza las siguientes tablas en Supabase:
 
 ```
 src/
-├── components/     # Componentes reutilizables
-├── views/         # Páginas principales
+├── components/     # Componentes reutilizables (Composition API)
+├── views/         # Páginas principales (Composition API)
 ├── services/      # Servicios de API
 ├── models/        # Tipos TypeScript
 ├── lib/          # Utilidades (store, supabase)
+├── composables/  # Composables reutilizables
 └── router/       # Configuración de rutas
 ```
 
@@ -94,10 +95,13 @@ Para acceder al panel de administración, crea un usuario con el nickname `admin
 ## 🎯 Características Técnicas
 
 - **SPA:** Navegación sin recarga de página
+- **Composition API:** Vue 3 con `<script setup>` para mejor rendimiento
+- **TypeScript:** Tipado estático completo
 - **Responsive:** Diseño mobile-first
 - **Accesible:** Etiquetas semánticas y ARIA
 - **Optimizado:** Queries eficientes y manejo de errores
 - **Componentes:** Arquitectura modular y reutilizable
+- **Tree-shaking:** Mejor optimización del bundle
 
 ---
 
@@ -132,6 +136,8 @@ El proyecto usa estas tablas en Supabase:
 - ✅ Editar perfil de usuario
 - ✅ Panel de administración (gestionar usuarios)
 - ✅ Navegación responsive
+- ✅ Actualización en tiempo real de comentarios
+- ✅ Sistema de likes interactivo
 
 ## 📱 Rutas Principales
 - `/` - Lista de posts
@@ -139,6 +145,34 @@ El proyecto usa estas tablas en Supabase:
 - `/register` - Registrarse
 - `/user/:nick_name` - Perfil de usuario
 - `/admin` - Panel de administración (solo para usuario 'admin')
+
+## 🏗️ Arquitectura Composition API
+
+El proyecto utiliza **Vue 3 Composition API** con `<script setup>` para:
+
+- **Mejor rendimiento:** Tree-shaking optimizado
+- **TypeScript mejorado:** Inferencia de tipos superior
+- **Código más limpio:** Lógica reutilizable y organizada
+- **Mantenibilidad:** Componentes más fáciles de mantener
+
+### Ejemplo de Componente:
+```vue
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+
+const count = ref(0)
+const doubleCount = computed(() => count.value * 2)
+
+const increment = () => {
+  count.value++
+}
+
+onMounted(() => {
+  console.log('Component mounted')
+})
+</script>
+```
+
 ---
 ## 📱 Rutas Principales Resta verificar como utilizar y craear el admin en la tabla de auth
 

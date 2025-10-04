@@ -161,216 +161,192 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-import type { PropType } from 'vue'
+<script setup lang="ts">
+import { ref, watch, onMounted } from 'vue'
 import type { Post, CommentWithUser, User, CreateComment } from '@/models'
 import { CommentService } from '@/services/commentService'
 import { LikePostService } from '@/services/likePostService'
 
-export default defineComponent({
-  name: 'AppPostItem',
-  props: {
-    post: {
-      type: Object as PropType<Post>,
-      required: true
-    },
-    comments: {
-      type: Array as PropType<CommentWithUser[]>,
-      default: () => []
-    },
-    currentUser: {
-      type: Object as PropType<User | null>,
-      default: null
-    },
-    currentUserId: {
-      type: [String, Number],
-      default: null
-    },
-    showActions: {
-      type: Boolean,
-      default: false
-    },
-    canComment: {
-      type: Boolean,
-      default: true
+interface Props {
+  post: Post
+  comments?: CommentWithUser[]
+  currentUser?: User | null
+  currentUserId?: string | number | null
+  showActions?: boolean
+  canComment?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  comments: () => [],
+  currentUser: null,
+  currentUserId: null,
+  showActions: false,
+  canComment: true
+})
+
+const emit = defineEmits<{
+  delete: [id: number]
+  edit: [post: Post]
+  view: [post: Post]
+  'like-toggled': [postId: number, data: { liked: boolean; likes_count: number }]
+  share: [post: Post]
+  'comment-created': [comment: CommentWithUser]
+  'comment-deleted': [commentId: number, postId: number]
+}>()
+
+const showComments = ref(false)
+const newCommentText = ref('')
+const isLiked = ref(false)
+const likesCount = ref(0)
+const isLiking = ref(false)
+
+const initializeLikeState = async () => {
+  likesCount.value = props.post.likes || 0
+  if (props.currentUserId) {
+    await checkLikeStatus()
+  } else {
+    isLiked.value = false
+  }
+}
+
+const checkLikeStatus = async () => {
+  if (!props.currentUserId) return
+  
+  try {
+    const response = await LikePostService.checkUserLikedPost(String(props.currentUserId), props.post.id)
+    if (!response.error) {
+      isLiked.value = response.liked
     }
-  },
-  data() {
-    return {
-      showComments: false,
-      newCommentText: '',
-      isLiked: false,
-      likesCount: 0,
-      isLiking: false
+  } catch (error) {
+    console.error('Error checking like status:', error)
+  }
+}
+
+const toggleComments = () => {
+  showComments.value = !showComments.value
+}
+
+const handleCreateComment = async () => {
+  const commentText = newCommentText.value?.trim()
+  if (!commentText || !props.currentUserId) return
+
+  try {
+    const commentData = {
+      comment: commentText,
+      post_id: props.post.id,
+      user_id: String(props.currentUserId)
+    } as CreateComment
+
+    const response = await CommentService.createComment(commentData)
+    
+    if (!response.error && response.data) {
+      emit('comment-created', response.data)
+      newCommentText.value = ''
+    } else {
+      console.error('Error creando comentario:', response.error)
+      alert('Error al crear el comentario: ' + response.error)
     }
-  },
-  async mounted() {
-    this.initializeLikeState()
-  },
-  watch: {
-    post: {
-      handler() {
-        this.initializeLikeState()
-      },
-      immediate: true
-    },
-    currentUserId: {
-      handler() {
-        this.initializeLikeState()
-      }
-    }
-  },
-  methods: {
-    async initializeLikeState() {
-      this.likesCount = this.post.likes || 0
-      if (this.currentUserId) {
-        await this.checkLikeStatus()
+  } catch (err) {
+    console.error('Error creando comentario:', err)
+    alert('Error al crear el comentario')
+  }
+}
+
+const canDeleteComment = (comment: CommentWithUser): boolean => {
+  return String(props.currentUser?.id) === String(comment.user?.id) || props.showActions
+}
+
+const handleDeleteComment = async (commentId: number) => {
+  if (confirm('¿Estás seguro de que quieres eliminar este comentario?')) {
+    try {
+      const result = await CommentService.deleteComment(commentId)
+      if (result.success) {
+        emit('comment-deleted', commentId, props.post.id)
       } else {
-        this.isLiked = false
+        console.error('Error eliminando comentario:', result.error)
+        alert('Error al eliminar el comentario')
       }
-    },
-
-    async checkLikeStatus() {
-      if (!this.currentUserId) return
-      
-      try {
-        const response = await LikePostService.checkUserLikedPost(String(this.currentUserId), this.post.id)
-        if (!response.error) {
-          this.isLiked = response.liked
-        }
-      } catch (error) {
-        console.error('Error checking like status:', error)
-      }
-    },
-
-    toggleComments() {
-      this.showComments = !this.showComments
-    },
-    
-    async handleCreateComment() {
-      const commentText = this.newCommentText?.trim()
-      if (!commentText || !this.currentUserId) return
-
-      try {
-        const commentData = {
-          comment: commentText,
-          post_id: this.post.id,
-          user_id: String(this.currentUserId)
-        } as CreateComment;
-
-        const response = await CommentService.createComment(commentData)
-        
-        if (!response.error && response.data) {
-          // Emitir evento para que el componente padre actualice la lista
-          this.$emit('comment-created', response.data)
-          this.newCommentText = ''
-        } else {
-          console.error('Error creando comentario:', response.error)
-          alert('Error al crear el comentario: ' + response.error)
-        }
-      } catch (err) {
-        console.error('Error creando comentario:', err)
-        alert('Error al crear el comentario')
-      }
-    },
-    
-    canDeleteComment(comment: CommentWithUser): boolean {
-      return String(this.currentUser?.id) === String(comment.user?.id) || this.showActions
-    },
-
-    async handleDeleteComment(commentId) {
-      if (confirm('¿Estás seguro de que quieres eliminar este comentario?')) {
-        try {
-          const result = await CommentService.deleteComment(commentId)
-          if (result.success) {
-            // Emitir evento para que el componente padre actualice la lista
-            this.$emit('comment-deleted', commentId, this.post.id)
-          } else {
-            console.error('Error eliminando comentario:', result.error)
-            alert('Error al eliminar el comentario')
-          }
-        } catch (err) {
-          console.error('Error eliminando comentario:', err)
-          alert('Error al eliminar el comentario')
-        }
-      }
-    },
-
-    async handleLikePost() {
-      if (!this.currentUserId || this.isLiking) return
-
-      this.isLiking = true
-
-      try {
-        const response = await LikePostService.toggleLikePost(String(this.currentUserId), this.post.id)
-        
-        if (response.error) {
-          console.error('Error al dar like:', response.error)
-          alert('Error al dar like al post')
-        } else {
-          // Actualizar estado local inmediatamente
-          this.isLiked = response.liked
-          
-          // Obtener el conteo actualizado de likes
-          const countResponse = await LikePostService.countLikesByPost(this.post.id)
-          
-          if (!countResponse.error) {
-            this.likesCount = countResponse.count
-          }
-          
-          // Emitir evento para que el componente padre actualice el estado del post
-          this.$emit('like-toggled', this.post.id, { 
-            liked: response.liked,
-            likes_count: this.likesCount
-          })
-        }
-      } catch (err) {
-        console.error('Error al dar like:', err)
-        alert('Error al dar like al post')
-      } finally {
-        this.isLiking = false
-      }
-    },
-    
-    formatDate(dateString: string): string {
-      const date = new Date(dateString)
-      const now = new Date()
-      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-      
-      if (diffInSeconds < 60) {
-        return 'hace un momento'
-      } else if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60)
-        return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
-      } else if (diffInSeconds < 86400) {
-        const hours = Math.floor(diffInSeconds / 3600)
-        return `hace ${hours} hora${hours > 1 ? 's' : ''}`
-      } else if (diffInSeconds < 2592000) {
-        const days = Math.floor(diffInSeconds / 86400)
-        return `hace ${days} día${days > 1 ? 's' : ''}`
-      } else {
-        return date.toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        })
-      }
-    },
-    
-    handleImageError(event: Event) {
-      const img = event.target as HTMLImageElement
-      img.src = '/default-avatar.svg'
+    } catch (err) {
+      console.error('Error eliminando comentario:', err)
+      alert('Error al eliminar el comentario')
     }
-  },
-  emits: [
-    'delete',
-    'edit', 
-    'view',
-    'like-toggled',
-    'share',
-    'comment-created',
-    'comment-deleted'
-  ]
+  }
+}
+
+const handleLikePost = async () => {
+  if (!props.currentUserId || isLiking.value) return
+
+  isLiking.value = true
+
+  try {
+    const response = await LikePostService.toggleLikePost(String(props.currentUserId), props.post.id)
+    
+    if (response.error) {
+      console.error('Error al dar like:', response.error)
+      alert('Error al dar like al post')
+    } else {
+      isLiked.value = response.liked
+      
+      const countResponse = await LikePostService.countLikesByPost(props.post.id)
+      
+      if (!countResponse.error) {
+        likesCount.value = countResponse.count
+      }
+      
+      emit('like-toggled', props.post.id, { 
+        liked: response.liked,
+        likes_count: likesCount.value
+      })
+    }
+  } catch (err) {
+    console.error('Error al dar like:', err)
+    alert('Error al dar like al post')
+  } finally {
+    isLiking.value = false
+  }
+}
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  
+  if (diffInSeconds < 60) {
+    return 'hace un momento'
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60)
+    return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600)
+    return `hace ${hours} hora${hours > 1 ? 's' : ''}`
+  } else if (diffInSeconds < 2592000) {
+    const days = Math.floor(diffInSeconds / 86400)
+    return `hace ${days} día${days > 1 ? 's' : ''}`
+  } else {
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+}
+
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.src = '/default-avatar.svg'
+}
+
+// Watchers
+watch(() => props.post, () => {
+  initializeLikeState()
+}, { immediate: true })
+
+watch(() => props.currentUserId, () => {
+  initializeLikeState()
+})
+
+// Lifecycle
+onMounted(() => {
+  initializeLikeState()
 })
 </script>
